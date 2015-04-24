@@ -19,7 +19,7 @@ int rpl_vsnprintf(char *, size_t, const char *, va_list);
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
 static bool _xopt_parse_arg(const char *arg, void *data, const char **err);
-static void _xopt_assert_increment(const char **extras, int extrasCount,
+static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 
 xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
@@ -70,7 +70,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
     }
 
     if (parseResult) {
-      _xopt_assert_increment(extras, extrasCount, &extrasCapac, err);
+      _xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
       if (err) {
         break;
       }
@@ -111,10 +111,13 @@ static bool _xopt_parse_arg(const char *arg, void *data, const char **err) {
   return true;
 }
 
-static void _xopt_assert_increment(const char **extras, int extrasCount,
+static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err) {
-  ((void)extras);
-  ((void)extrasCount);
-  ((void)extrasCapac);
-  ((void)err);
+  if ((size_t) extrasCount == *extrasCapac) {
+    *extrasCapac += EXTRAS_INIT;
+    *extras = realloc(*extras, *extrasCapac);
+    if (!*extras) {
+      _xopt_set_err(err, "could not realloc arguments array");
+    }
+  }
 }
