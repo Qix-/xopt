@@ -1,5 +1,5 @@
 HEADERS = xopt.h
-OBJECTS = xopt.o
+OBJECTS = snprintf.o xopt.o
 
 default: libxopt.a
 
