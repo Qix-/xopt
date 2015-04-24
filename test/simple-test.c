@@ -65,6 +65,6 @@ int main(int argc, const char **argv) {
 
 exit:
   if (extras) free(extras); /* DO NOT free individual strings */
-  if (ctx) free(ctx);
+  if (ctx) free(ctx);       /*   they point to argv strings   */
   return result;
 }
