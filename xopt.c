@@ -5,7 +5,7 @@
 #include "xopt.h"
 
 #define EXTRAS_INIT 10
-#define ERRBUF_SIZE 1024*16
+#define ERRBUF_SIZE 1024*4
 
 static char errbuf[ERRBUF_SIZE];
 
