@@ -102,3 +102,19 @@ static void _xopt_set_err(const char **err, const char *const fmt, ...) {
   va_end(list);
   *err = &errbuf[0];
 }
+
+
+static bool _xopt_parse_arg(const char *arg, void *data, const char **err) {
+  ((void)arg);
+  ((void)data);
+  ((void)err);
+  return true;
+}
+
+static void _xopt_assert_increment(const char **extras, int extrasCount,
+    size_t *extrasCapac, const char **err) {
+  ((void)extras);
+  ((void)extrasCount);
+  ((void)extrasCapac);
+  ((void)err);
+}
