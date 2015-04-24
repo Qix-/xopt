@@ -5,9 +5,9 @@
 #include "xopt.h"
 
 #define EXTRAS_INIT 10
-#define ERRBUF_SIZE 1024
+#define ERRBUF_SIZE 1024*16
 
-static char errbuf[1024];
+static char errbuf[ERRBUF_SIZE];
 
 struct xoptContext {
   xoptOption *options;
@@ -15,9 +15,9 @@ struct xoptContext {
   const char *name;
 };
 
-void _xopt_set_err(const char **err, const char *const fmt, ...);
-bool _xopt_parse_arg(const char *arg, void *data, const char **err);
-void _xopt_assert_increment(const char **extras, int extrasCount,
+static void _xopt_set_err(const char **err, const char *const fmt, ...);
+static bool _xopt_parse_arg(const char *arg, void *data, const char **err);
+static void _xopt_assert_increment(const char **extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 
 xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
@@ -91,4 +91,12 @@ end:
     *inextras = extras;
     return extrasCount;
   }
+}
+
+static void _xopt_set_err(const char **err, const char *const fmt, ...) {
+  va_list list;
+  va_start(list, fmt);
+  rpl_vsnprintf(&errbuf[0], ERRBUF_SIZE, fmt, list);
+  va_end(list);
+  *err = &errbuf[0];
 }
