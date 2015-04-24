@@ -3,8 +3,10 @@ OBJECTS = snprintf.o xopt.o
 
 default: libxopt.a
 
+DEFINES += -DHAVE_STDARG_H=1 -DHAVE_STDLIB_H=1
+
 %.o: %.c $(HEADERS)
-	gcc -ansi -pedantic -Wall -Wextra -Werror -c $< -o $@
+	gcc -ansi -pedantic -Wall -Wextra -Werror $(DEFINES) -c $< -o $@
 
 libxopt.a: $(OBJECTS)
 	ar rcs $@ $(OBJECTS)
