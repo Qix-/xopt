@@ -31,8 +31,7 @@ enum xoptContextFlag {
 
 typedef struct xoptOption {
   const char                *longArg;
-  const char                *shortArg;
-  void                      *defaultVal;
+  const char                shortArg;
   size_t                    offset;
   xoptCallback              callback;
   long                      options;
@@ -40,7 +39,7 @@ typedef struct xoptOption {
   const char                *descrip;
 } xoptOption;
 
-#define XOPT_NULLOPTION {0, 0, 0, 0, 0, 0, 0, 0}
+#define XOPT_NULLOPTION {0, 0, 0, 0, 0, 0, 0}
 
 typedef struct xoptContext xoptContext;
 
@@ -55,15 +54,16 @@ xopt_context(
 int
 xopt_parse(
     xoptContext             *ctx,
-    void                    *data,
     int                     argc,
     const char              **argv,
+    void                    *data,
     const char              ***extras,
     const char              **err);
 
 void
 xopt_autohelp(
     FILE                    *stream,
-    xoptContext             *ctx);
+    xoptContext             *ctx,
+    void                    *defaults);
 
 #endif

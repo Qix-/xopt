@@ -40,7 +40,7 @@ xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
   return ctx;
 }
 
-int xopt_parse(xoptContext *ctx, void* data, int argc, const char **argv,
+int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
     const char ***inextras, const char **err) {
   int argi;
   int extrasCount;
