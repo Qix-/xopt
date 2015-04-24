@@ -50,7 +50,6 @@ xopt_context(
     long                    flags,
     const char              **err);
 
-/* XXX returns the number of extras */
 int
 xopt_parse(
     xoptContext             *ctx,
