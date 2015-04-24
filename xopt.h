@@ -55,9 +55,10 @@ xopt_context(
 int
 xopt_parse(
     xoptContext             *ctx,
+    void                    *data,
     int                     argc,
     const char              **argv,
-    const char              **extra,
+    const char              ***extras,
     const char              **err);
 
 void
