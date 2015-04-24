@@ -40,7 +40,7 @@ typedef struct xoptOption {
   const char                *descrip;
 } xoptOption;
 
-#define XOPT_NULLOPT {0, 0, 0, 0, 0, 0, 0}
+#define XOPT_NULLOPTION {0, 0, 0, 0, 0, 0, 0, 0}
 
 typedef struct xoptContext xoptContext;
 
