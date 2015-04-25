@@ -51,6 +51,7 @@ xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
   xoptContext* ctx;
   *err = 0;
 
+  /* malloc context and check */
   ctx = malloc(sizeof(xoptContext));
   if (!ctx) {
     ctx = 0;
@@ -78,28 +79,42 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
   extrasCapac = EXTRAS_INIT;
   extras = malloc(sizeof(*extras) * EXTRAS_INIT);
 
+  /* check if extras malloc'd okay */
   if (!extras) {
     _xopt_set_err(err, "could not allocate extras array");
     goto end;
   }
 
+  /* increment argument counter if we aren't
+     instructed to check argv[0] */
   if (!(ctx->flags & XOPT_CTX_KEEPFIRST)) {
     ++argi;
   }
 
+  /* iterate over passed command line arguments */
   for (; argi < argc; argi++) {
+    /* parse, breaking if there was a failure
+       parseResult is true if extra, false if option */
     parseResult = _xopt_parse_arg(ctx, argc, argv, argi, data, err);
     if (*err) {
       break;
     }
 
+    /* is the argument an extra? */
     if (parseResult) {
+      /* make sure we have enough room, or realloc if we don't -
+         check that it succeeded */
       _xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
       if (*err) {
         break;
       }
+
+      /* add extra to list */
       extras[extrasCount++] = argv[argi];
     } else {
+      /* make sure we're super-posix'd if specified to be
+         (check that no extras have been specified when an option is parsed,
+         enforcing options to be specific before [extra] arguments */
       if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && extrasCount) {
         _xopt_set_err(err, "options cannot be specified after arguments: %s",
             argv[argi]);
@@ -110,9 +125,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 
 end:
   if (*err) {
-    if (extras) {
-      free(extras);
-    }
+    free(extras);
     *inextras = 0;
     return 0;
   } else {
@@ -141,7 +154,9 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err) {
+  /* have we hit the list size limit? */
   if ((size_t) extrasCount == *extrasCapac) {
+    /* increase capcity, realloc, and check for success */
     *extrasCapac += EXTRAS_INIT;
     *extras = realloc(*extras, *extrasCapac);
     if (!*extras) {
