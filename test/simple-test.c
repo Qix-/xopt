@@ -26,6 +26,7 @@ int main(int argc, const char **argv) {
   xoptContext *ctx;
   SimpleConfig config;
   const char **extras;
+  const char **extrasPtr;
   int extraCount;
 
   result = 0;
@@ -57,8 +58,9 @@ int main(int argc, const char **argv) {
   P(someInt, d);
 
   fprintf(stderr, "\nextra count: %d\n", extraCount);
+  extrasPtr = extras;
   while (extraCount--) {
-    fprintf(stderr, "- %s\n", *extras++);
+    fprintf(stderr, "- %s\n", *extrasPtr++);
   }
 
 #undef P

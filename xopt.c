@@ -18,7 +18,8 @@ struct xoptContext {
 int rpl_vsnprintf(char *, size_t, const char *, va_list);
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
-static bool _xopt_parse_arg(const char *arg, void *data, const char **err);
+static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
+    int argi, void *data, const char **err);
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 
@@ -64,14 +65,14 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
   }
 
   for (; argi < argc; argi++) {
-    parseResult = _xopt_parse_arg(argv[argi], data, err);
-    if (err) {
+    parseResult = _xopt_parse_arg(ctx, argc, argv, argi, data, err);
+    if (*err) {
       break;
     }
 
     if (parseResult) {
       _xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
-      if (err) {
+      if (*err) {
         break;
       }
       extras[extrasCount++] = argv[argi];
@@ -85,8 +86,10 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
   }
 
 end:
-  if (err) {
-    free(extras);
+  if (*err) {
+    if (extras) {
+      free(extras);
+    }
     *inextras = 0;
     return 0;
   } else {
@@ -103,11 +106,13 @@ static void _xopt_set_err(const char **err, const char *const fmt, ...) {
   *err = &errbuf[0];
 }
 
+static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
+    int argi, void *data, const char **err) {
+  *err = 0;
 
-static bool _xopt_parse_arg(const char *arg, void *data, const char **err) {
-  ((void)arg);
+  ((void)argc);
   ((void)data);
-  ((void)err);
+  fprintf(stderr, "%d: %s <%s>\n", argi, argv[argi], ctx->name);
   return true;
 }
 
