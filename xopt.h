@@ -1,3 +1,26 @@
+/**
+ * XOpt - command line parsing library
+ *
+ * Copyright (c) 2015 JD Ballard.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 #ifndef XOPT_H__
 #define XOPT_H__
 #pragma once
@@ -6,63 +29,115 @@
 
 struct xoptOption;
 
+/**
+ * Callback type for handling values.
+ *  Called when a command line argument has been
+ *  processed.
+ */
 typedef void (*xoptCallback)(
-    const char              *value,
-    void                    *data,
-    const struct xoptOption *option,
-    const char              **err);
+    const char              *value,       /* string cmd line option */
+    void                    *data,        /* custom data structure */
+    const struct xoptOption *option,      /* detected option */
+    const char              **err);       /* err output */
 
 enum xoptOptionFlag {
-  XOPT_TYPE_STRING          = 0x1,
-  XOPT_TYPE_INT             = 0x2,
-  XOPT_TYPE_LONG            = 0x4,
-  XOPT_TYPE_FLOAT           = 0x8,
-  XOPT_TYPE_DOUBLE          = 0x10,
-  XOPT_TYPE_BOOL            = 0x20,
+  XOPT_TYPE_STRING          = 0x1,        /* const char* type */
+  XOPT_TYPE_INT             = 0x2,        /* int type */
+  XOPT_TYPE_LONG            = 0x4,        /* long type */
+  XOPT_TYPE_FLOAT           = 0x8,        /* float type */
+  XOPT_TYPE_DOUBLE          = 0x10,       /* double type */
+  XOPT_TYPE_BOOL            = 0x20,       /* boolean (int) type */
 
-  XOPT_OPTIONAL             = 0x40,
-  XOPT_SHOW_DEFAULT         = 0x80
+  XOPT_OPTIONAL             = 0x40,       /* whether the argument value is
+                                             optional */
+  XOPT_SHOW_DEFAULT         = 0x80        /* show default value in autohelp */
 };
 
 enum xoptContextFlag {
-  XOPT_CTX_KEEPFIRST        = 0x1,
-  XOPT_CTX_POSIXMEHARDER    = 0x2
+  XOPT_CTX_KEEPFIRST        = 0x1,        /* don't ignore argv[0] */
+  XOPT_CTX_POSIXMEHARDER    = 0x2         /* options cannot come after
+                                             extra arguments */
 };
 
 typedef struct xoptOption {
-  const char                *longArg;
-  const char                shortArg;
-  size_t                    offset;
-  xoptCallback              callback;
-  long                      options;
-  const char                *argDescrip;
-  const char                *descrip;
+  const char                *longArg;     /* --long-arg-name, or 0 for short
+                                             arg only */
+  const char                shortArg;     /* -s hort arg character, or '\0'
+                                             for long arg only */
+  size_t                    offset;       /* offsetof(type, property) for
+                                             automatic configuration handler -
+                                             -1 for manual management (callback
+                                             must be set) */
+  xoptCallback              callback;     /* callback for resolved option
+                                             handling - must be set if offset
+                                             is -1 */
+  long                      options;      /* xoptOptionFlag options */
+  const char                *argDescrip;  /* --argument=argDescrip (autohelp) */
+  const char                *descrip;     /* argument explanation */
 } xoptOption;
 
+/* option list terminator */
 #define XOPT_NULLOPTION {0, 0, 0, 0, 0, 0, 0}
 
 typedef struct xoptContext xoptContext;
 
+/**
+ * Creates an XOpt context to be used with
+ * subsequent calls to XOpt functions */
 xoptContext*
 xopt_context(
-    const char              *name,
-    xoptOption              *options,
-    long                    flags,
-    const char              **err);
+    const char              *name,        /* name of the argument set (usually
+                                             name of the cli binary file/cmd */
+    xoptOption              *options,     /* list of xoptOption objects,
+                                             terminated with XOPT_NULLOPTION */
+    long                    flags,        /* xoptContextFlag flags */
+    const char              **err);       /* pointer to a const char* that
+                                             receives an err should one occur -
+                                             set to 0 if command completed
+                                             successfully */
 
+/**
+ * Parses the command line of a program
+ * and returns the number of non-options
+ * returned to the `extras' pointer (see
+ * below)
+ */
 int
 xopt_parse(
-    xoptContext             *ctx,
-    int                     argc,
-    const char              **argv,
-    void                    *data,
-    const char              ***extras,
-    const char              **err);
+    xoptContext             *ctx,         /* previously created XOpt context */
+    int                     argc,         /* argc, from int main() */
+    const char              **argv,       /* argv, from int main() */
+    void                    *data,        /* a custom data object whos type
+                                             corresponds to `.offset' values
+                                             specified in the options list;
+                                             populated with values interpreted
+                                             from the command line */
+    const char              ***extras,    /* receives a list of extra non-option
+                                             arguments (i.e. files, subcommands,
+                                             etc.) - length of which is returned
+                                             by the function call */
+    const char              **err);       /* pointer to a const char* that
+                                             receives an err should one occur -
+                                             set to 0 if command completed
+                                             successfully */
 
+/**
+ * Generates and prints a help message
+ * and prints it to a FILE stream.
+ * If `defaults' is supplied, uses
+ * offsets (values) defined by the options
+ * list to show default options
+ */
 void
 xopt_autohelp(
-    FILE                    *stream,
-    xoptContext             *ctx,
-    void                    *defaults);
+    xoptContext             *ctx,         /* previously created XOpt context */
+    FILE                    *stream,      /* a stream to print to - if 0,
+                                             defaults to `stderr'. */
+    void                    *defaults,    /* if specified, uses offsets of this
+                                             object to show default values */
+    const char              **err);       /* pointer to a const char* that
+                                             receives an err should one occur -
+                                             set to 0 if command completed
+                                             successfully */
 
 #endif
