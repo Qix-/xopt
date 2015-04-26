@@ -177,13 +177,17 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
       _xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
     } else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
       /* get argument or error if not found and strict mode enabled. */
-      /* TODO check for return value of 0, indicating this is an erroneous
-         sloppypants */
-      _xopt_get_arg(arg, 1, ctx->options, size, &option);
+      argRequirement = _xopt_get_arg(arg, 1, ctx->options, size, &option);
       if (!option) {
         if (ctx->flags & XOPT_CTX_STRICT) {
-          _xopt_set_err(err, "invalid argument: -%c", arg[0]);
+          _xopt_set_err(err, "invalid option: -%c", arg[0]);
         }
+        break;
+      }
+
+      /* did they specify an arg when they shouldn't have? */
+      if (!argRequirement) {
+        _xopt_set_err(err, "option doesn't take a value: -%c", arg[0]);
         break;
       }
 
@@ -199,7 +203,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
         argRequirement = _xopt_get_arg(arg++, 1, ctx->options, size, &option);
         if (!option) {
           if (ctx->flags & XOPT_CTX_STRICT) {
-            _xopt_set_err(err, "invalid argument: -%c", arg[0]);
+            _xopt_set_err(err, "invalid option: -%c", arg[-1]);
           }
           break;
         }
@@ -224,7 +228,8 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
               /* is the next argument actually an option?
                  this indicates no value was passed */
               if (_xopt_get_size(argv[*argi + 1])) {
-                _xopt_set_err(err, "missing argument value: -%c", arg[0]);
+                _xopt_set_err(err, "missing option value: -%c",
+                    option->shortArg);
               } else {
                 _xopt_set(data, option, argv[++*argi], err);
               }
