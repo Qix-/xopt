@@ -210,9 +210,13 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
           if (length == 1) {
             /* is there another argument? */
             if (argc == *argi + 1) {
-              /* TODO check if next is an option and error if it is */
-              /* TODO ^ will require moving size checking into its own func */
-              _xopt_set(data, option, argv[++*argi], err);
+              /* is the next argument actually an option?
+                 this indicates no value was passed */
+              if (_xopt_get_size(argv[*argi + 1])) {
+                _xopt_set_err(err, "missing argument value: -%c", arg[0]);
+              } else {
+                _xopt_set(data, option, argv[++*argi], err);
+              }
             } else {
               _xopt_set_err(err, "missing option value: -%c",
                   option->shortArg);
