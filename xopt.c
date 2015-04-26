@@ -48,7 +48,7 @@ static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 static int _xopt_get_size(const char *arg);
 static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
-    int size, xoptOption **out);
+    int size, xoptOption **option);
 static void _xopt_set(void *data, xoptOption *option, const char *val,
     const char **err);
 
@@ -276,4 +276,27 @@ static int _xopt_get_size(const char *arg) {
     }
   }
   return size;
+}
+
+static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
+    int size, xoptOption **option) {
+  /* find the argument */
+  for (; options[0].longArg || options[0].shortArg; options++) {
+    if (size == 1 && options[0].shortArg == arg[0]) {
+      *option = options;
+      break;
+    } else if (!strncmp(options[0].longArg, arg, len)) {
+      *option = options;
+      break;
+    }
+  }
+
+  /* determine the optionality of a value */
+  if (!*option || (*option)->options & XOPT_TYPE_BOOL) {
+    return 0;
+  } else if ((*option)->options & XOPT_OPTIONAL) {
+    return 1;
+  } else {
+    return 2;
+  }
 }
