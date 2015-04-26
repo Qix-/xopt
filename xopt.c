@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include "xopt.h"
 
 #define EXTRAS_INIT 10
@@ -42,7 +43,7 @@ int rpl_vsnprintf(char *, size_t, const char *, va_list);
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
 static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
-    int argi, void *data, const char **err);
+    int *argi, void *data, const char **err);
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 
@@ -95,7 +96,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
   for (; argi < argc; argi++) {
     /* parse, breaking if there was a failure
        parseResult is true if extra, false if option */
-    parseResult = _xopt_parse_arg(ctx, argc, argv, argi, data, err);
+    parseResult = _xopt_parse_arg(ctx, argc, argv, &argi, data, err);
     if (*err) {
       break;
     }
@@ -143,13 +144,43 @@ static void _xopt_set_err(const char **err, const char *const fmt, ...) {
 }
 
 static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
-    int argi, void *data, const char **err) {
-  *err = 0;
+    int *argi, void *data, const char **err) {
+  int size;
+  size_t length;
+  bool isExtra = false;
+  const char* arg = argv[*argi];
+  ((void)data);/* XXX */
+  ((void)argc);/* XXX */
 
-  ((void)argc);
-  ((void)data);
-  fprintf(stderr, "%d: %s <%s>\n", argi, argv[argi], ctx->name);
-  return true;
+  /* get argument 'size' (long/short/extra) */
+  for (size = 0; size < 2; size++) {
+    if (arg[size] != '-') {
+      break;
+    }
+  }
+
+  /* adjust to parse from beginning of actual content */
+  arg += size;
+  length = strlen(arg);
+
+  /* TODO handle 0 length (and if long, check for XOPT_CTX_DOUBLEDASH
+     which allows everything after a `--' to forward straight to extras */
+
+  switch (size) {
+  case 1: /* short */
+    if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)) {
+      _xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
+    }
+    break;
+  case 2: /* long */
+    break;
+  case 0: /* extra */
+/*forward_to_extra:*/ /* XXX */
+    isExtra = true;
+    break;
+  }
+
+  return isExtra;
 }
 
 static void _xopt_assert_increment(const char ***extras, int extrasCount,

@@ -55,8 +55,13 @@ enum xoptOptionFlag {
 
 enum xoptContextFlag {
   XOPT_CTX_KEEPFIRST        = 0x1,        /* don't ignore argv[0] */
-  XOPT_CTX_POSIXMEHARDER    = 0x2         /* options cannot come after
+  XOPT_CTX_POSIXMEHARDER    = 0x2,        /* options cannot come after
                                              extra arguments */
+  XOPT_CTX_NOCONDENSE       = 0x4,        /* don't allow short args to be
+                                             condensed (i.e. `ls -laF') */
+  XOPT_CTX_SLOPPYSHORTS     = 0x8 | 0x4   /* allow short arg values to be
+                                             directly after the character
+                                             (implies NOCONDENSE) */
 };
 
 typedef struct xoptOption {
