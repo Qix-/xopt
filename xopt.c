@@ -154,8 +154,6 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
   size_t length;
   bool isExtra = false;
   const char* arg = argv[*argi];
-  ((void)data);/* XXX */
-  ((void)argc);/* XXX */
 
   /* get argument 'size' (long/short/extra) */
   size = _xopt_get_size(arg);
@@ -250,7 +248,6 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
   case 2: /* long */
     break;
   case 0: /* extra */
-/*forward_to_extra:*/ /* XXX */
     isExtra = true;
     break;
   }
