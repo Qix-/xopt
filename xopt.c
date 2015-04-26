@@ -222,9 +222,9 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
           break;
         case 2: /* requires an argument */
           /* is it the last in a set of condensed options? */
-          if (length == 1) {
+          if (length == 0) {
             /* is there another argument? */
-            if (argc == *argi + 1) {
+            if (*argi + 1 < argc) {
               /* is the next argument actually an option?
                  this indicates no value was passed */
               if (_xopt_get_size(argv[*argi + 1])) {
