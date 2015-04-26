@@ -46,6 +46,10 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
     int *argi, void *data, const char **err);
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
+static bool _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
+    int size, xoptOption **out);
+static void _xopt_set(void *data, xoptOption *option, const char *val,
+    const char **err);
 
 xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
     const char **err) {
@@ -167,10 +171,40 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
      which allows everything after a `--' to forward straight to extras */
 
   switch (size) {
+    xoptOption *option;
+    bool requiresArg;
   case 1: /* short */
-    if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)) {
+    if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)
+        && !(ctx->flags & XOPT_CTX_SLOPPYSHORTS)) {
+      /* invalid argument? */
       _xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
+    } else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
+      /* get argument or error if not found and strict mode enabled. */
+      /* we also disregard the return value here (requiresArg) since
+         we're already here because it's been supplied one; we'll let
+         the handler check the validity of it */
+      _xopt_get_arg(arg, 1, ctx->options, size, &option);
+      if (!option && (ctx->flags & XOPT_CTX_STRICT)) {
+        goto invalid_arg_short;
+      }
+
+      /* set argument and check */
+      _xopt_set(data, option, arg + 1, err);
+      if (*err) {
+        break;
+      }
+    } else {
+      /* parse all */
+      while (length-- && ++arg) {
+        
+      }
     }
+
+    break;
+
+invalid_arg_short:
+    /* yes, a goto label. it was either this, or redundant strings. */
+    _xopt_set_err(err, "invalid argument: -%c", arg[0]);
     break;
   case 2: /* long */
     break;

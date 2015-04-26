@@ -59,9 +59,10 @@ enum xoptContextFlag {
                                              extra arguments */
   XOPT_CTX_NOCONDENSE       = 0x4,        /* don't allow short args to be
                                              condensed (i.e. `ls -laF') */
-  XOPT_CTX_SLOPPYSHORTS     = 0x8 | 0x4   /* allow short arg values to be
+  XOPT_CTX_SLOPPYSHORTS     = 0x8 | 0x4,  /* allow short arg values to be
                                              directly after the character
                                              (implies NOCONDENSE) */
+  XOPT_CTX_STRICT           = 0x10        /* fails on invalid arguments */
 };
 
 typedef struct xoptOption {
