@@ -47,7 +47,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
 static int _xopt_get_size(const char *arg);
-static bool _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
+static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     int size, xoptOption **out);
 static void _xopt_set(void *data, xoptOption *option, const char *val,
     const char **err);
@@ -169,7 +169,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
   switch (size) {
     xoptOption *option;
-    bool requiresArg;
+    int argRequirement;
   case 1: /* short */
     if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)
         && !(ctx->flags & XOPT_CTX_SLOPPYSHORTS)) {
@@ -177,9 +177,8 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
       _xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
     } else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
       /* get argument or error if not found and strict mode enabled. */
-      /* we also disregard the return value here (requiresArg) since
-         we're already here because it's been supplied one; we'll let
-         the handler check the validity of it */
+      /* TODO check for return value of 0, indicating this is an erroneous
+         sloppypants */
       _xopt_get_arg(arg, 1, ctx->options, size, &option);
       if (!option) {
         if (ctx->flags & XOPT_CTX_STRICT) {
@@ -197,7 +196,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
       /* parse all */
       while (length--) {
         /* get argument or error if not found and strict mode enabled. */
-        requiresArg = _xopt_get_arg(arg++, 1, ctx->options, size, &option);
+        argRequirement = _xopt_get_arg(arg++, 1, ctx->options, size, &option);
         if (!option) {
           if (ctx->flags & XOPT_CTX_STRICT) {
             _xopt_set_err(err, "invalid argument: -%c", arg[0]);
@@ -205,8 +204,20 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
           break;
         }
 
-        if (requiresArg) {
-          /* is it the last? */
+        switch (argRequirement) {
+        case 0: /* flag; doesn't take an argument */
+          _xopt_set(data, option, 0, err);
+          break;
+        case 1: /* argument is optional */
+          /* is there another argument, and is it a non-option? */
+          if (*argi + 1 < argc && _xopt_get_size(argv[*argi + 1]) == 0) {
+            _xopt_set(data, option, argv[++*argi], err);
+          } else {
+            _xopt_set(data, option, 0, err);
+          }
+          break;
+        case 2: /* requires an argument */
+          /* is it the last in a set of condensed options? */
           if (length == 1) {
             /* is there another argument? */
             if (argc == *argi + 1) {
@@ -222,12 +233,10 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
                   option->shortArg);
             }
           } else {
-            _xopt_set_err(err, "combined short option requiring value "
+            _xopt_set_err(err, "combined short option requiring value is "
                 "not last: -%c", option->shortArg);
           }
-        } else {
-          /* TODO check if next size is 0 and xset it if it is */
-          _xopt_set(data, option, 0, err);
+          break;
         }
       }
     }
