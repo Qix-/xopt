@@ -51,6 +51,8 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     int size, xoptOption **option);
 static void _xopt_set(void *data, xoptOption *option, const char *val,
     const char **err);
+static void _xopt_default_callback(const char *value, void *data,
+    const xoptOption *option, const char **err);
 
 xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
     const char **err) {
@@ -299,4 +301,17 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
   } else {
     return 2;
   }
+}
+
+static void _xopt_set(void *data, xoptOption *option, const char *val,
+    const char **err) {
+  xoptCallback callback;
+
+  /* determine callback */
+  if (!(option->callback)) {
+    callback = &_xopt_default_callback;
+  }
+
+  /* dispatch callback */
+  callback(val, data, option, err);
 }
