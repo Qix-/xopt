@@ -46,6 +46,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
     int *argi, void *data, const char **err);
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
     size_t *extrasCapac, const char **err);
+static int _xopt_get_size(const char *arg);
 static bool _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     int size, xoptOption **out);
 static void _xopt_set(void *data, xoptOption *option, const char *val,
@@ -157,11 +158,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
   ((void)argc);/* XXX */
 
   /* get argument 'size' (long/short/extra) */
-  for (size = 0; size < 2; size++) {
-    if (arg[size] != '-') {
-      break;
-    }
-  }
+  size = _xopt_get_size(arg);
 
   /* adjust to parse from beginning of actual content */
   arg += size;
@@ -254,4 +251,14 @@ static void _xopt_assert_increment(const char ***extras, int extrasCount,
       _xopt_set_err(err, "could not realloc arguments array");
     }
   }
+}
+
+static int _xopt_get_size(const char *arg) {
+  int size;
+  for (size = 0; size < 2; size++) {
+    if (arg[size] != '-') {
+      break;
+    }
+  }
+  return size;
 }
