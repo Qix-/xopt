@@ -184,8 +184,11 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
          we're already here because it's been supplied one; we'll let
          the handler check the validity of it */
       _xopt_get_arg(arg, 1, ctx->options, size, &option);
-      if (!option && (ctx->flags & XOPT_CTX_STRICT)) {
-        goto invalid_arg_short;
+      if (!option) {
+        if (ctx->flags & XOPT_CTX_STRICT) {
+          _xopt_set_err(err, "invalid argument: -%c", arg[0]);
+        }
+        break;
       }
 
       /* set argument and check */
@@ -195,16 +198,39 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
       }
     } else {
       /* parse all */
-      while (length-- && ++arg) {
-        
+      while (length--) {
+        /* get argument or error if not found and strict mode enabled. */
+        requiresArg = _xopt_get_arg(arg++, 1, ctx->options, size, &option);
+        if (!option) {
+          if (ctx->flags & XOPT_CTX_STRICT) {
+            _xopt_set_err(err, "invalid argument: -%c", arg[0]);
+          }
+          break;
+        }
+
+        if (requiresArg) {
+          /* is it the last? */
+          if (length == 1) {
+            /* is there another argument? */
+            if (argc == *argi + 1) {
+              /* TODO check if next is an option and error if it is */
+              /* TODO ^ will require moving size checking into its own func */
+              _xopt_set(data, option, argv[++*argi], err);
+            } else {
+              _xopt_set_err(err, "missing option value: -%c",
+                  option->shortArg);
+            }
+          } else {
+            _xopt_set_err(err, "combined short option requiring value "
+                "not last: -%c", option->shortArg);
+          }
+        } else {
+          /* TODO check if next size is 0 and xset it if it is */
+          _xopt_set(data, option, 0, err);
+        }
       }
     }
 
-    break;
-
-invalid_arg_short:
-    /* yes, a goto label. it was either this, or redundant strings. */
-    _xopt_set_err(err, "invalid argument: -%c", arg[0]);
     break;
   case 2: /* long */
     break;
