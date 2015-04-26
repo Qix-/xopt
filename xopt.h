@@ -26,6 +26,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdbool.h>
 
 struct xoptOption;
 
@@ -38,6 +39,8 @@ typedef void (*xoptCallback)(
     const char              *value,       /* string cmd line option */
     void                    *data,        /* custom data structure */
     const struct xoptOption *option,      /* detected option */
+    bool                    longArg,      /* true if the long-arg version
+                                             was used */
     const char              **err);       /* err output */
 
 enum xoptOptionFlag {
@@ -71,12 +74,9 @@ typedef struct xoptOption {
   const char                shortArg;     /* -s hort arg character, or '\0'
                                              for long arg only */
   size_t                    offset;       /* offsetof(type, property) for
-                                             automatic configuration handler -
-                                             -1 for manual management (callback
-                                             must be set) */
+                                             automatic configuration handler */
   xoptCallback              callback;     /* callback for resolved option
-                                             handling - must be set if offset
-                                             is -1 */
+                                             handling */
   long                      options;      /* xoptOptionFlag options */
   const char                *argDescrip;  /* --argument=argDescrip (autohelp) */
   const char                *descrip;     /* argument explanation */

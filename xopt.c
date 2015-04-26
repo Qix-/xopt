@@ -50,9 +50,9 @@ static int _xopt_get_size(const char *arg);
 static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     int size, xoptOption **option);
 static void _xopt_set(void *data, xoptOption *option, const char *val,
-    const char **err);
+    bool longArg, const char **err);
 static void _xopt_default_callback(const char *value, void *data,
-    const xoptOption *option, const char **err);
+    const xoptOption *option, bool longArg, const char **err);
 
 xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
     const char **err) {
@@ -192,7 +192,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
       }
 
       /* set argument and check */
-      _xopt_set(data, option, arg + 1, err);
+      _xopt_set(data, option, arg + 1, false, err);
       if (*err) {
         break;
       }
@@ -210,14 +210,14 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
         switch (argRequirement) {
         case 0: /* flag; doesn't take an argument */
-          _xopt_set(data, option, 0, err);
+          _xopt_set(data, option, 0, false, err);
           break;
         case 1: /* argument is optional */
           /* is there another argument, and is it a non-option? */
           if (*argi + 1 < argc && _xopt_get_size(argv[*argi + 1]) == 0) {
-            _xopt_set(data, option, argv[++*argi], err);
+            _xopt_set(data, option, argv[++*argi], false, err);
           } else {
-            _xopt_set(data, option, 0, err);
+            _xopt_set(data, option, 0, false, err);
           }
           break;
         case 2: /* requires an argument */
@@ -231,7 +231,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
                 _xopt_set_err(err, "missing option value: -%c",
                     option->shortArg);
               } else {
-                _xopt_set(data, option, argv[++*argi], err);
+                _xopt_set(data, option, argv[++*argi], false, err);
               }
             } else {
               _xopt_set_err(err, "missing option value: -%c",
@@ -304,7 +304,7 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
 }
 
 static void _xopt_set(void *data, xoptOption *option, const char *val,
-    const char **err) {
+    bool longArg, const char **err) {
   xoptCallback callback;
 
   /* determine callback */
@@ -313,5 +313,61 @@ static void _xopt_set(void *data, xoptOption *option, const char *val,
   }
 
   /* dispatch callback */
-  callback(val, data, option, err);
+  callback(val, data, option, longArg, err);
+}
+
+static void _xopt_default_callback(const char *value, void *data,
+    const xoptOption *option, bool longArg, const char **err) {
+  void *target;
+  char *parsePtr = 0;
+
+  /* is a value specified? */
+  if ((!value || !strlen(value)) && !(option->options & XOPT_TYPE_BOOL)) {
+    /* we reach this point when they specified an optional, non-boolean
+       option but didn't specify a custom handler (therefore, it's not
+       optional).
+
+       to fix, just remove the optional flag or specify a callback to handle
+       it yourself.
+       */
+    return;
+  }
+
+  /* get location */
+  target = ((char*) data) + option->offset;
+
+  /* switch on the type */
+  switch (option->options & 0x2F) {
+  case XOPT_TYPE_BOOL:
+    /* booleans are special in that they won't have an argument passed
+       into this callback */
+    *((_Bool*) target) = true;
+    break;
+  case XOPT_TYPE_STRING:
+    /* lifetime here works out fine; argv can usually be assumed static-like
+       in nature */
+    *((const char**) target) = value;
+    break;
+  case XOPT_TYPE_INT:
+    *((int*) target) = (int) strtol(value, &parsePtr, 0);
+    break;
+  default: /* something wonky, or the implementation specifies two types */
+    /* silently ignore it... */
+    break;
+  }
+
+  /* check that our parsing functions worked */
+  if (parsePtr && (parsePtr - value - strlen(value))) {
+    /* the math on the above line is as follows:
+       if the next character after the parsed number, minus
+       the beginning of the value pointer (giving us a delta), minus
+       the length of the value, isn't 0, then... */
+    if (longArg) {
+      _xopt_set_err(err, "value isn't a valid number: --%s=%s",
+          (void*) option->longArg, value);
+    } else {
+      _xopt_set_err(err, "value isn't a valid number: -%c %s",
+          option->shortArg, value);
+    }
+  }
 }
