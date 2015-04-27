@@ -36,7 +36,8 @@ int main(int argc, const char **argv) {
   config.someInt = 0;
 
   /* create context */
-  ctx = xopt_context("xopt-test", options, XOPT_CTX_POSIXMEHARDER, &err);
+  ctx = xopt_context("xopt-test", options,
+      XOPT_CTX_POSIXMEHARDER | XOPT_CTX_STRICT, &err);
   if (err) {
     fprintf(stderr, "Error: %s\n", err);
     result = 1;
