@@ -282,6 +282,8 @@ static int _xopt_get_size(const char *arg) {
 
 static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     int size, xoptOption **option) {
+  *option = 0;
+
   /* find the argument */
   for (; options[0].longArg || options[0].shortArg; options++) {
     if (size == 1 && options[0].shortArg == arg[0]) {
