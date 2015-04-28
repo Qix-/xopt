@@ -170,6 +170,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
   switch (size) {
     xoptOption *option;
     int argRequirement;
+    char *valStart;
   case 1: /* short */
     if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)
         && !(ctx->flags & XOPT_CTX_SLOPPYSHORTS)) {
@@ -248,6 +249,46 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
     break;
   case 2: /* long */
+    /* find first equals sign */
+    valStart = strchr(arg, '=');
+
+    /* is there a value? */
+    if (valStart) {
+      /* we also increase valStart here in order to lop off
+         the equals sign */
+      length = valStart++ - arg;
+
+      /* but not really, if it's null */
+      if (!*valStart) {
+        valStart = 0;
+      }
+    }
+
+    /* get the option */
+    argRequirement = _xopt_get_arg(arg, length, ctx->options, size, &option);
+    if (!option) {
+      _xopt_set_err(err, "invalid option: --%.*s", length, arg);
+    } else {
+      switch (argRequirement) {
+      case 0: /* flag; doesn't take an argument */
+        if (valStart) {
+          _xopt_set_err(err, "option doesn't take a value: --%s", arg);
+        }
+
+        _xopt_set(data, option, valStart, true, err);
+        break;
+      case 2: /* requires an argument */
+        if (!valStart) {
+          _xopt_set_err(err, "missing option value: --%s", arg);
+        }
+        break;
+      }
+
+      if (!*err) {
+        _xopt_set(data, option, valStart, true, err);
+      }
+    }
+
     break;
   case 0: /* extra */
     isExtra = true;
@@ -289,7 +330,8 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
     if (size == 1 && options[0].shortArg == arg[0]) {
       *option = options;
       break;
-    } else if (!strncmp(options[0].longArg, arg, len)) {
+    } else if (strlen(options[0].longArg) == len &&
+        !strncmp(options[0].longArg, arg, len)) {
       *option = options;
       break;
     }
