@@ -395,6 +395,15 @@ static void _xopt_default_callback(const char *value, void *data,
   case XOPT_TYPE_INT:
     *((int*) target) = (int) strtol(value, &parsePtr, 0);
     break;
+  case XOPT_TYPE_LONG:
+    *((long*) target) = strtol(value, &parsePtr, 0);
+    break;
+  case XOPT_TYPE_FLOAT:
+    *((float*) target) = (float) strtod(value, &parsePtr);
+    break;
+  case XOPT_TYPE_DOUBLE:
+    *((double*) target) = strtod(value, &parsePtr);
+    break;
   default: /* something wonky, or the implementation specifies two types */
     /* silently ignore it... */
     break;
