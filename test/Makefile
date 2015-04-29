@@ -12,7 +12,7 @@ endif
 	gcc -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) -I.. -c $< -o $@
 
 xopt-test: $(OBJECTS) ../libxopt.a
-	gcc -L.. -lxopt -o $@ $(OBJECTS)
+	gcc -L.. -o $@ $(OBJECTS) -lxopt
 
 clean:
 	-rm -f $(OBJECTS)
