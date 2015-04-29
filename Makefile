@@ -2,9 +2,10 @@ HEADERS = xopt.h
 OBJECTS = snprintf.o xopt.o
 
 default: libxopt.a
-	make -C test
+	$(MAKE) -C test
 
 DEFINES += -DHAVE_STDARG_H=1 -DHAVE_STDLIB_H=1
+DEFINES += -DHAVE_VASPRINTF=1 -DHAVE_ASPRINTF=1
 XFLAGS :=
 
 ifdef DEBUG
@@ -20,4 +21,4 @@ libxopt.a: $(OBJECTS)
 clean:
 	-rm -f $(OBJECTS)
 	-rm -f libxopt.a
-	make -C test clean
+	$(MAKE) -C test clean
