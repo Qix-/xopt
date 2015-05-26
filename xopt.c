@@ -349,7 +349,7 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
 
 static void _xopt_set(void *data, xoptOption *option, const char *val,
     bool longArg, const char **err) {
-  xoptCallback callback;
+  xoptCallback callback = 0;
 
   /* determine callback */
   if (!(option->callback)) {
