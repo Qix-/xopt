@@ -25,8 +25,8 @@ int main(int argc, const char **argv) {
   const char *err;
   xoptContext *ctx;
   SimpleConfig config;
-  const char **extras;
-  const char **extrasPtr;
+  const char **extras = 0;
+  const char **extrasPtr = 0;
   int extraCount;
 
   result = 0;
