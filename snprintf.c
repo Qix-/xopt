@@ -2095,3 +2095,4 @@ do {                                                                           \
 #endif	/* TEST_SNPRINTF */
 
 /* vim: set joinspaces textwidth=80: */
+
