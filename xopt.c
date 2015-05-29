@@ -147,6 +147,7 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, xoptAutohelpOptions *options,
   xoptOption *o;
   size_t i, width = 0, twidth;
   const char *nl = "";
+  size_t spacer = options ? options->spacer : 2;
 
   *err = 0;
 
@@ -203,9 +204,8 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, xoptAutohelpOptions *options,
       }
     }
 
-    /* TODO make the 2 width spacer configurable */
     if (o->descrip) {
-      for (; twidth < (width + 2); twidth++) {
+      for (; twidth < (width + spacer); twidth++) {
         fprintf(stream, " ");
       }
 

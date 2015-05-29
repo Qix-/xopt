@@ -91,6 +91,8 @@ typedef struct xoptAutohelpOptions {
   const char                *usage;       /* usage string, or null */
   const char                *prefix;      /* printed before options, or null */
   const char                *suffix;      /* printed after options, or null */
+  size_t                    spacer;       /* number of spaces between option and
+                                             description */
 } xoptAutohelpOptions;
 
 /**

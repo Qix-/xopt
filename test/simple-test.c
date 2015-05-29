@@ -68,6 +68,7 @@ int main(int argc, const char **argv) {
     opts.usage = "usage: simple-test [options] [extras...]";
     opts.prefix = "A simple demonstration of the XOpt options parser library.";
     opts.suffix = "End argument list.";
+    opts.spacer = 10;
 
     xopt_autohelp(ctx, stderr, &opts, &err);
     goto exit;
