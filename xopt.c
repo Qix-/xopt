@@ -142,6 +142,31 @@ end:
   }
 }
 
+void xopt_autohelp(xoptContext *ctx, FILE *stream, void *defaults,
+    const char **err, xoptAutohelpOptions *options) {
+  const char *nl = "";
+  *err = 0;
+
+  if (options && options->usage) {
+    fprintf(stream, "%s%s\n", nl, options->usage);
+    nl = "\n";
+  }
+
+  if (options && options->prefix) {
+    fprintf(stream, "%s%s\n", nl, options->prefix);
+    nl = "\n";
+  }
+
+  /* TODO args */
+  ((void)defaults);
+  ((void)err);
+  ((void)ctx);
+
+  if (options && options->suffix) {
+    fprintf(stream, "%s%s\n", nl, options->suffix);
+  }
+}
+
 static void _xopt_set_err(const char **err, const char *const fmt, ...) {
   va_list list;
   va_start(list, fmt);
@@ -424,3 +449,4 @@ static void _xopt_default_callback(const char *value, void *data,
     }
   }
 }
+

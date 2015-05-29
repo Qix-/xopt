@@ -87,9 +87,26 @@ typedef struct xoptOption {
 
 typedef struct xoptContext xoptContext;
 
+typedef enum xoptAutohelpColor {
+  XOPT_COLOR_NEVER          = -1,         /* don't color, even if terminal
+                                             supports it */
+  XOPT_COLOR_AUTO           = 0,          /* only color if terminal supports
+                                             it */
+  XOPT_COLOR_ALWAYS         = 1           /* always color, even if terminal
+                                             doesn't support it */
+} xoptAutohelpColor;
+
+typedef struct xoptAutohelpOptions {
+  const char                *usage;       /* usage string, or null */
+  const char                *prefix;      /* printed before options, or null */
+  const char                *suffix;      /* printed after options, or null */
+  xoptAutohelpColor         useColor;     /* when to use color */
+} xoptAutohelpOptions;
+
 /**
  * Creates an XOpt context to be used with
- * subsequent calls to XOpt functions */
+ * subsequent calls to XOpt functions
+ */
 xoptContext*
 xopt_context(
     const char              *name,        /* name of the argument set (usually
@@ -141,9 +158,11 @@ xopt_autohelp(
                                              defaults to `stderr'. */
     void                    *defaults,    /* if specified, uses offsets of this
                                              object to show default values */
-    const char              **err);       /* pointer to a const char* that
+    const char              **err,        /* pointer to a const char* that
                                              receives an err should one occur -
                                              set to 0 if command completed
                                              successfully */
+    xoptAutohelpOptions     *options);    /* configuration options to tailor
+                                             autohelp output */
 
 #endif
