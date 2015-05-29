@@ -51,9 +51,8 @@ enum xoptOptionFlag {
   XOPT_TYPE_DOUBLE          = 0x10,       /* double type */
   XOPT_TYPE_BOOL            = 0x20,       /* boolean (int) type */
 
-  XOPT_OPTIONAL             = 0x40,       /* whether the argument value is
+  XOPT_OPTIONAL             = 0x40        /* whether the argument value is
                                              optional */
-  XOPT_SHOW_DEFAULT         = 0x80        /* show default value in autohelp */
 };
 
 enum xoptContextFlag {

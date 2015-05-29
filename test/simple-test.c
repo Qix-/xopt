@@ -14,7 +14,7 @@ xoptOption options[] = {
     'i',
     offsetof(SimpleConfig, someInt),
     0,
-    XOPT_TYPE_INT | XOPT_SHOW_DEFAULT,
+    XOPT_TYPE_INT,
     "n",
     "Some integer value. Can set to whatever number you like."
   },
