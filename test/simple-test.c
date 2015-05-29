@@ -5,6 +5,7 @@
 
 typedef struct {
   int someInt;
+  bool help;
 } SimpleConfig;
 
 xoptOption options[] = {
@@ -16,6 +17,15 @@ xoptOption options[] = {
     XOPT_TYPE_INT | XOPT_SHOW_DEFAULT,
     "n",
     "Some integer value. Can set to whatever number you like."
+  },
+  {
+    "help",
+    '?',
+    offsetof(SimpleConfig, help),
+    0,
+    XOPT_TYPE_BOOL,
+    0,
+    "Shows this help message"
   },
   XOPT_NULLOPTION
 };
@@ -52,11 +62,23 @@ int main(int argc, const char **argv) {
     goto exit;
   }
 
+  /* help? */
+  if (config.help) {
+    xoptAutohelpOptions opts;
+    opts.usage = "usage: simple-test [options] [extras...]";
+    opts.prefix = "A simple demonstration of the XOpt options parser library.";
+    opts.suffix = "End argument list.";
+
+    xopt_autohelp(ctx, stderr, &opts, &err);
+    goto exit;
+  }
+
   /* print */
 #define P(field, delim) fprintf(stderr, #field ":\t%" #delim "\n",              \
     config.field)
 
   P(someInt, d);
+  P(help, d);
 
   fprintf(stderr, "\nextra count: %d\n", extraCount);
   extrasPtr = extras;

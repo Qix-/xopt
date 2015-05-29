@@ -142,9 +142,12 @@ end:
   }
 }
 
-void xopt_autohelp(xoptContext *ctx, FILE *stream, void *defaults,
-    const char **err, xoptAutohelpOptions *options) {
+void xopt_autohelp(xoptContext *ctx, FILE *stream, xoptAutohelpOptions *options,
+    const char **err) {
+  xoptOption *o;
+  size_t i, width = 0, twidth;
   const char *nl = "";
+
   *err = 0;
 
   if (options && options->usage) {
@@ -153,14 +156,62 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, void *defaults,
   }
 
   if (options && options->prefix) {
-    fprintf(stream, "%s%s\n", nl, options->prefix);
+    fprintf(stream, "%s%s\n\n", nl, options->prefix);
     nl = "\n";
   }
 
-  /* TODO args */
-  ((void)defaults);
-  ((void)err);
-  ((void)ctx);
+  /* find max width */
+  for (i = 0; ctx->options[i].longArg || ctx->options[i].shortArg; i++) {
+    o = &ctx->options[i];
+    twidth = 0;
+    if (o->longArg) {
+      twidth += 2 + strlen(o->longArg);
+      if (o->argDescrip) {
+        twidth += 1 + strlen(o->argDescrip);
+      }
+    }
+    if (ctx->options[i].shortArg) {
+      twidth += 2;
+    }
+    if (ctx->options[i].shortArg && ctx->options[i].longArg) {
+      twidth += 2; /* `, ` */
+    }
+
+    width = width > twidth ? width : twidth;
+  }
+
+  /* print */
+  for (i = 0; ctx->options[i].longArg || ctx->options[i].shortArg; i++) {
+    o = &ctx->options[i];
+    twidth = 0;
+    if (o->shortArg) {
+      fprintf(stream, "-%c", o->shortArg);
+      twidth += 2;
+    }
+
+    if (o->shortArg && o->longArg) {
+      fprintf(stream, ", ");
+      twidth += 2;
+    }
+
+    if (o->longArg) {
+      fprintf(stream, "--%s", o->longArg);
+      twidth += 2 + strlen(o->longArg);
+      if (o->argDescrip) {
+        fprintf(stream, "=%s", o->argDescrip);
+        twidth += 1 + strlen(o->argDescrip);
+      }
+    }
+
+    /* TODO make the 2 width spacer configurable */
+    if (o->descrip) {
+      for (; twidth < (width + 2); twidth++) {
+        fprintf(stream, " ");
+      }
+
+      fprintf(stream, "%s\n", o->descrip);
+    }
+  }
 
   if (options && options->suffix) {
     fprintf(stream, "%s%s\n", nl, options->suffix);
