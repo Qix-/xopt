@@ -8,12 +8,12 @@ DEFINES += -DHAVE_STDARG_H=1 -DHAVE_STDLIB_H=1
 DEFINES += -DHAVE_VASPRINTF=1 -DHAVE_ASPRINTF=1
 XFLAGS :=
 
-ifdef DEBUG
+ifeq ($(DEBUG),1)
 	XFLAGS += -g2
 endif
 
 %.o: %.c $(HEADERS)
-	gcc -ansi -pedantic -Wall -Wextra -Werror ${XFLAGS} $(DEFINES) -c $< -o $@
+	gcc -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) $(DEFINES) -c $< -o $@
 
 libxopt.a: $(OBJECTS)
 	ar rcs $@ $(OBJECTS)
