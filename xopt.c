@@ -486,11 +486,7 @@ static void _xopt_default_callback(const char *value, void *data,
   }
 
   /* check that our parsing functions worked */
-  if (parsePtr && (parsePtr - value - strlen(value))) {
-    /* the math on the above line is as follows:
-       if the next character after the parsed number, minus
-       the beginning of the value pointer (giving us a delta), minus
-       the length of the value, isn't 0, then... */
+  if (parsePtr && *parsePtr) {
     if (longArg) {
       _xopt_set_err(err, "value isn't a valid number: --%s=%s",
           (void*) option->longArg, value);
