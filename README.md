@@ -6,5 +6,4 @@ accepts arguments in GNU format and focuses on clean definition, taking stress
 off the implementation.
 
 # License
-XOpt is licensed under the [MIT license](http://opensource.org/licenses/MIT).
-You may find a copy in *LICENSE* at the root of this repository.
+Originally by Josh Junon, released into the public domain. Go nuts.
