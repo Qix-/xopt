@@ -457,7 +457,7 @@ static void _xopt_default_callback(const char *value, void *data,
   target = ((char*) data) + option->offset;
 
   /* switch on the type */
-  switch (option->options & 0x2F) {
+  switch (option->options & 0x3F) {
   case XOPT_TYPE_BOOL:
     /* booleans are special in that they won't have an argument passed
        into this callback */
@@ -481,7 +481,8 @@ static void _xopt_default_callback(const char *value, void *data,
     *((double*) target) = strtod(value, &parsePtr);
     break;
   default: /* something wonky, or the implementation specifies two types */
-    /* silently ignore it... */
+    fprintf(stderr, "warning: XOpt argument type invalid: %ld\n",
+      option->options & 0x2F);
     break;
   }
 

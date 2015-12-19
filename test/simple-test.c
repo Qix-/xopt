@@ -5,6 +5,8 @@
 
 typedef struct {
   int someInt;
+  float someFloat;
+  double someDouble;
   bool help;
 } SimpleConfig;
 
@@ -17,6 +19,24 @@ xoptOption options[] = {
     XOPT_TYPE_INT,
     "n",
     "Some integer value. Can set to whatever number you like."
+  },
+  {
+    "some-float",
+    'f',
+    offsetof(SimpleConfig, someFloat),
+    0,
+    XOPT_TYPE_FLOAT,
+    "n",
+    "Some float value."
+  },
+  {
+    "some-double",
+    'd',
+    offsetof(SimpleConfig, someDouble),
+    0,
+    XOPT_TYPE_DOUBLE,
+    "n",
+    "Some double value."
   },
   {
     "help",
@@ -44,6 +64,9 @@ int main(int argc, const char **argv) {
 
   /* setup defaults */
   config.someInt = 0;
+  config.someDouble = 0.0f;
+  config.someDouble = 0.0;
+  config.help = 0;
 
   /* create context */
   ctx = xopt_context("xopt-test", options,
@@ -79,6 +102,8 @@ int main(int argc, const char **argv) {
     config.field)
 
   P(someInt, d);
+  P(someFloat, f);
+  P(someDouble, f);
   P(help, d);
 
   fprintf(stderr, "\nextra count: %d\n", extraCount);
