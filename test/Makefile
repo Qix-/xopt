@@ -9,10 +9,10 @@ ifdef DEBUG
 endif
 
 %.o: %.c
-	gcc -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) -I.. -c $< -o $@
+	$(CC) -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) -I.. -c $< -o $@
 
 xopt-test: $(OBJECTS) ../libxopt.a
-	gcc -L.. -o $@ $(OBJECTS) -lxopt
+	$(CC) -L.. -o $@ $(OBJECTS) -lxopt
 
 clean:
 	-rm -f $(OBJECTS)
