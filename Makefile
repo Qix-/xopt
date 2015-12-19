@@ -13,7 +13,7 @@ ifeq ($(DEBUG),1)
 endif
 
 %.o: %.c $(HEADERS)
-	gcc -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) $(DEFINES) -c $< -o $@
+	$(CC) -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) $(DEFINES) -c $< -o $@
 
 libxopt.a: $(OBJECTS)
 	ar rcs $@ $(OBJECTS)
