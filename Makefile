@@ -4,8 +4,6 @@ OBJECTS = xopt.o
 default: libxopt.a
 	$(MAKE) -C test
 
-DEFINES += -DHAVE_STDARG_H=1 -DHAVE_STDLIB_H=1
-DEFINES += -DHAVE_VASPRINTF=1 -DHAVE_ASPRINTF=1
 XFLAGS :=
 
 ifeq ($(DEBUG),1)

@@ -28,6 +28,12 @@
 #include <string.h>
 #include "xopt.h"
 
+#ifndef XOPT_NOSTANDARD
+#	define HAVE_STDARG_H 1
+#	define HAVE_STDLIB_H 1
+#	define HAVE_VASPRINTF_H 1
+#	define HAVE_ASPRINTF_H 1
+#endif
 #include "snprintf.c"
 
 #define EXTRAS_INIT 10
