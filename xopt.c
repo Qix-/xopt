@@ -28,6 +28,8 @@
 #include <string.h>
 #include "xopt.h"
 
+#include "snprintf.c"
+
 #define EXTRAS_INIT 10
 #define ERRBUF_SIZE 1024 * 4
 
@@ -38,8 +40,6 @@ struct xoptContext {
 	long flags;
 	const char *name;
 };
-
-int rpl_vsnprintf(char *, size_t, const char *, va_list);
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
 static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,

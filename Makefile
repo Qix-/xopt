@@ -1,5 +1,5 @@
 HEADERS = xopt.h
-OBJECTS = snprintf.o xopt.o
+OBJECTS = xopt.o
 
 default: libxopt.a
 	$(MAKE) -C test
