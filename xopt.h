@@ -98,6 +98,10 @@ typedef struct xoptAutohelpOptions {
 	                                           description */
 } xoptAutohelpOptions;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Creates an XOpt context to be used with
  * subsequent calls to XOpt functions
@@ -158,4 +162,7 @@ xopt_autohelp(
 	                                         set to 0 if command completed
 	                                         successfully */
 
+#ifdef __cplusplus
+}
+#endif
 #endif
