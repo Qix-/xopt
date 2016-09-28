@@ -30,6 +30,10 @@
 
 struct xoptOption;
 
+#ifndef offsetof
+#	define offsetof(T, member) (size_t)(&(((T*)0)->member))
+#endif
+
 /**
  * Callback type for handling values.
  *  Called when a command line argument has been
@@ -50,7 +54,7 @@ enum xoptOptionFlag {
 	XOPT_TYPE_FLOAT           = 0x8,        /* float type */
 	XOPT_TYPE_DOUBLE          = 0x10,       /* double type */
 	XOPT_TYPE_BOOL            = 0x20,       /* boolean (int) type */
-	
+
 	XOPT_OPTIONAL             = 0x40        /* whether the argument value is
 	                                           optional */
 };
