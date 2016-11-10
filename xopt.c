@@ -42,7 +42,7 @@
 static char errbuf[ERRBUF_SIZE];
 
 struct xoptContext {
-	xoptOption *options;
+	const xoptOption *options;
 	long flags;
 	const char *name;
 };
@@ -53,14 +53,14 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
 		size_t *extrasCapac, const char **err);
 static int _xopt_get_size(const char *arg);
-static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
-		int size, xoptOption **option);
-static void _xopt_set(void *data, xoptOption *option, const char *val,
+static int _xopt_get_arg(const char *arg, size_t len, const xoptOption *options,
+		int size, const xoptOption **option);
+static void _xopt_set(void *data, const xoptOption *option, const char *val,
 		bool longArg, const char **err);
 static void _xopt_default_callback(const char *value, void *data,
 		const xoptOption *option, bool longArg, const char **err);
 
-xoptContext* xopt_context(const char *name, xoptOption *options, long flags,
+xoptContext* xopt_context(const char *name, const xoptOption *options, long flags,
 		const char **err) {
 	xoptContext* ctx;
 	*err = 0;
@@ -150,7 +150,7 @@ end:
 
 void xopt_autohelp(xoptContext *ctx, FILE *stream, xoptAutohelpOptions *options,
 		const char **err) {
-	xoptOption *o;
+	const xoptOption *o;
 	size_t i, width = 0, twidth;
 	const char *nl = "";
 	size_t spacer = options ? options->spacer : 2;
@@ -250,7 +250,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		 which allows everything after a `--' to forward straight to extras */
 
 	switch (size) {
-		xoptOption *option;
+		const xoptOption *option;
 		int argRequirement;
 		char *valStart;
 	case 1: /* short */
@@ -403,8 +403,8 @@ static int _xopt_get_size(const char *arg) {
 	return size;
 }
 
-static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
-		int size, xoptOption **option) {
+static int _xopt_get_arg(const char *arg, size_t len, const xoptOption *options,
+		int size, const xoptOption **option) {
 	*option = 0;
 
 	/* find the argument */
@@ -429,7 +429,7 @@ static int _xopt_get_arg(const char *arg, size_t len, xoptOption *options,
 	}
 }
 
-static void _xopt_set(void *data, xoptOption *option, const char *val,
+static void _xopt_set(void *data, const xoptOption *option, const char *val,
 		bool longArg, const char **err) {
 	xoptCallback callback = 0;
 

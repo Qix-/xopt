@@ -110,7 +110,7 @@ xoptContext*
 xopt_context(
 	const char              *name,        /* name of the argument set (usually
 	                                         name of the cli binary file/cmd */
-	xoptOption              *options,     /* list of xoptOption objects,
+	const xoptOption        *options,     /* list of xoptOption objects,
 	                                         terminated with XOPT_NULLOPTION */
 	long                    flags,        /* xoptContextFlag flags */
 	const char              **err);       /* pointer to a const char* that
