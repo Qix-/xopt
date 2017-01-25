@@ -7,7 +7,7 @@ default: libxopt.a
 XFLAGS :=
 
 ifeq ($(DEBUG),1)
-	XFLAGS += -g2
+	XFLAGS += -g3
 endif
 
 %.o: %.c $(HEADERS)
