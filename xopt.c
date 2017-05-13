@@ -148,7 +148,7 @@ end:
 	}
 }
 
-void xopt_autohelp(xoptContext *ctx, FILE *stream, xoptAutohelpOptions *options,
+void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *options,
 		const char **err) {
 	const xoptOption *o;
 	size_t i, width = 0, twidth;
