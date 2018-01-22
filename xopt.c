@@ -48,6 +48,7 @@ struct xoptContext {
 	const xoptOption *options;
 	long flags;
 	const char *name;
+	bool doubledash;
 };
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
@@ -77,6 +78,7 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 		ctx->options = options;
 		ctx->flags = flags;
 		ctx->name = name;
+		ctx->doubledash = false;
 	}
 
 	return ctx;
@@ -242,6 +244,11 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	bool isExtra = false;
 	const char* arg = argv[*argi];
 
+	/* are we in doubledash mode? */
+	if (ctx->doubledash) {
+		return true;
+	}
+
 	/* get argument 'size' (long/short/extra) */
 	size = _xopt_get_size(arg);
 
@@ -249,8 +256,11 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	arg += size;
 	length = strlen(arg);
 
-	/* TODO handle 0 length (and if long, check for XOPT_CTX_DOUBLEDASH
-		 which allows everything after a `--' to forward straight to extras */
+	if (size == 2 && length == 0) {
+		/* double-dash - everything after this is an extra */
+		ctx->doubledash = 1;
+		return false;
+	}
 
 	switch (size) {
 		const xoptOption *option;
