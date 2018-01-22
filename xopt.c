@@ -34,7 +34,7 @@
 #	define HAVE_VASPRINTF_H 1
 #	define HAVE_ASPRINTF_H 1
 #endif
-#include "snprintf.c"
+#include "./snprintf.c"
 
 #define EXTRAS_INIT 10
 #define ERRBUF_SIZE 1024 * 4
