@@ -27,7 +27,9 @@
 #	define HAVE_STDLIB_H 1
 #	define HAVE_VASPRINTF_H 1
 #	define HAVE_ASPRINTF_H 1
-#	define _GNU_SOURCE
+#	ifndef _GNU_SOURCE
+#		define _GNU_SOURCE
+#	endif
 #endif
 
 #include <stdlib.h>
