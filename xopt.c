@@ -21,12 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include "xopt.h"
 
 #ifndef XOPT_NOSTANDARD
 #	define HAVE_STDARG_H 1
@@ -35,6 +29,14 @@
 #	define HAVE_ASPRINTF_H 1
 #	define _GNU_SOURCE
 #endif
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "./xopt.h"
 #include "./snprintf.c"
 
 #define EXTRAS_INIT 10
