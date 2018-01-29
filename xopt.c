@@ -269,8 +269,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		int argRequirement;
 		char *valStart;
 	case 1: /* short */
-		if (length > 1 && (ctx->flags & XOPT_CTX_NOCONDENSE)
-				&& !(ctx->flags & XOPT_CTX_SLOPPYSHORTS)) {
+		if (length > 1 && ctx->flags & XOPT_CTX_NOCONDENSE) {
 			/* invalid argument? */
 			_xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
 		} else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
