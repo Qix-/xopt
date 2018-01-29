@@ -258,6 +258,11 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	arg += size;
 	length = strlen(arg);
 
+	if (size == 1 && length == 0) {
+		/* it's just a singular dash - treat it as an extra arg */
+		return true;
+	}
+
 	if (size == 2 && length == 0) {
 		/* double-dash - everything after this is an extra */
 		ctx->doubledash = 1;
