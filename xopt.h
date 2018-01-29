@@ -162,6 +162,67 @@ xopt_autohelp(
 	                                             set to 0 if command completed
 	                                             successfully */
 
+/**
+ * Generates a default option parser that's sane for most cases.
+ *
+ * Assumes there's a `help` property that is boolean-checkable that exists on the
+ * config pointer passed to `config_ptr` (i.e. does a lookup of `config_ptr->help`).
+ *
+ * In the event help is invoked, xopt will `goto xopt_help`. It is up to you to define such
+ * a label in order to recover. In this case, extrav will still be allocated and will still need to be
+ * freed.
+ *
+ * To be extra clear, you need to free `extrav_ptr` is if `*err_ptr` is not `NULL`.
+ *
+ * `name` is the name of the binary you'd like to pass to the context (welcome to use `argv[0]` here),
+ * `options` is a reference to the xoptOptions array you've specified,
+ * `config_ptr` is a *pointer* to your configuration instance,
+ * `argc` and `argv` are the int/const char ** passed into main,
+ * `extrac_ptr` and `extrav_ptr` are pointers to an `int`/`const char **`
+ *    (so `int*` and `const char ***`, respectively) that receive the parsed extra args
+ *    (note that, unless there is an error, `extrav_ptr` is owned by your program and must
+ *    be `free()`'d when you're done using it, even if there are zero extra arguments),
+ *  and `err_ptr` is a pointer to a `const char *` (so a `const char **`) that receives any error
+ *    strings in the event of a problem. These errors are statically allocated so no need to
+ *    free them. This variable should be initialized to NULL and checked after calling
+ *    `XOPT_SIMPLE_PARSE()`.
+ *
+ *  `autohelp_file`, `autohelp_usage`, `autohelp_prefix`, `autohelp_suffix` and `autohelp_spacer` are all
+ *  parameters to the `xoptAutohelpOptions` struct (with the exception of `autohelp_file`, which must be a
+ *  `FILE*` reference (e.g. `stdout` or `stderr`) which receives the rendered autohelp text). Consult the
+ *  `xoptAutohelpOptions` struct above for documentation as to valid values for each of these properties.
+ */
+#define XOPT_SIMPLE_PARSE(name, options, config_ptr, argc, argv, extrac_ptr, extrav_ptr, err_ptr, autohelp_file, autohelp_usage, autohelp_prefix, autohelp_suffix, autohelp_spacer) do { \
+		xoptContext *_xopt_ctx; \
+		\
+		*(err_ptr) = NULL; \
+		\
+		_xopt_ctx = xopt_context((name), (options), XOPT_CTX_POSIXMEHARDER | XOPT_CTX_STRICT, (err_ptr)); \
+		if (*(err_ptr)) break; \
+		\
+		*extrac_ptr = xopt_parse(_xopt_ctx, (argc), (argv), (config_ptr), (extrav_ptr), (err_ptr)); \
+		if (*(err_ptr)) goto __xopt_end_free_ctx; \
+		\
+		if ((config_ptr)->help) { \
+			xoptAutohelpOptions __xopt_autohelp_opts; \
+			__xopt_autohelp_opts.usage = (autohelp_usage); \
+			__xopt_autohelp_opts.prefix = (autohelp_prefix); \
+			__xopt_autohelp_opts.suffix = (autohelp_suffix); \
+			__xopt_autohelp_opts.spacer = (autohelp_spacer); \
+			xopt_autohelp(_xopt_ctx, (autohelp_file), &__xopt_autohelp_opts, (err_ptr)); \
+			if (*(err_ptr)) goto __xopt_end_free_extrav; \
+			goto xopt_help; \
+		} \
+	\
+	__xopt_end_free_ctx: \
+		free(_xopt_ctx); \
+		break; \
+	__xopt_end_free_extrav: \
+		free((extrav_ptr)); \
+		free(_xopt_ctx); \
+		break; \
+	} while (false)
+
 #ifdef __cplusplus
 }
 #endif

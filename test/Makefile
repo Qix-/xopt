@@ -1,19 +1,14 @@
-OBJECTS = simple-test.o
+.PHONY: all clean
 
-default: xopt-test
-
-XFLAGS :=
-
-ifdef DEBUG
-	XFLAGS += -g2
-endif
+all: simple-test macro-test
 
 %.o: %.c
-	$(CC) -ansi -pedantic -Wall -Wextra -Werror $(XFLAGS) -I.. -c $< -o $@
+	$(CC) -ansi -pedantic -Wall -Wextra -Werror $(CFLAGS) -I.. -c $< -o $@
 
-xopt-test: $(OBJECTS) ../libxopt.a
-	$(CC) -L.. -o $@ $(OBJECTS) -lxopt
+simple-test: simple-test.o ../libxopt.a
+	$(CC) -L.. -o $@ $< -lxopt
+macro-test: macro-test.o ../libxopt.a
+	$(CC) -L.. -o $@ $< -lxopt
 
 clean:
-	-rm -f $(OBJECTS)
-	-rm -f xopt-test
+	-rm -f $(OBJECTS) simple-test macro-test *.o
