@@ -218,7 +218,7 @@ xopt_autohelp(
 		free(_xopt_ctx); \
 		break; \
 	__xopt_end_free_extrav: \
-		free((extrav_ptr)); \
+		free(*(extrav_ptr)); \
 		free(_xopt_ctx); \
 		break; \
 	} while (false)
