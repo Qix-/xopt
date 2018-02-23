@@ -145,14 +145,22 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	}
 
 end:
+	if (!*err) {
+		/* append null terminator to extras */
+		_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
+		if (!*err) {
+			extras[extrasCount] = 0;
+		}
+	}
+
 	if (*err) {
 		free(extras);
 		*inextras = 0;
 		return 0;
-	} else {
-		*inextras = extras;
-		return extrasCount;
 	}
+
+	*inextras = extras;
+	return extrasCount;
 }
 
 void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *options,
