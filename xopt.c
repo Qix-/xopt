@@ -413,7 +413,7 @@ static void _xopt_assert_increment(const char ***extras, int extrasCount,
 	if ((size_t) extrasCount == *extrasCapac) {
 		/* increase capcity, realloc, and check for success */
 		*extrasCapac += EXTRAS_INIT;
-		*extras = realloc(*extras, *extrasCapac);
+		*extras = realloc(*extras, sizeof(**extras) * *extrasCapac);
 		if (!*extras) {
 			_xopt_set_err(err, "could not realloc arguments array");
 		}
