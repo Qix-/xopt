@@ -59,6 +59,13 @@ int main(int argc, const char **argv) {
 	const char **extrasPtr = NULL;
 	int extraCount = 0;
 
+	/* show arguments */
+	fputs("args:", stderr);
+	for (int i = 1; i < argc; i++) {
+		fprintf(stderr, " «%s»", argv[i]);
+	}
+	fputs("\n\n", stderr);
+
 	/* setup defaults */
 	config.someInt = 0;
 	config.someDouble = 0.0;
