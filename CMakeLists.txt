@@ -7,7 +7,7 @@ function (_xopt_test name)
 	add_executable ("xopt-test-${name}" "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.c")
 	target_link_libraries ("xopt-test-${name}" xopt)
 	add_test (
-		NAME "xopt-test-${name}--test"
+		NAME "xopt-${name}-test"
 		COMMAND $<TARGET_FILE:xopt-test-${name}> ${ARGN}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test")
 endfunction ()
