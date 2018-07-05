@@ -8,10 +8,10 @@ WORKDIR /src/build
 FROM base
 RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=On
 RUN cmake --build .
-RUN ctest
+RUN ctest -VV
 
 # Release
 FROM base
 RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=On
 RUN cmake --build .
-RUN ctest
+RUN ctest -VV
