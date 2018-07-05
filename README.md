@@ -1,4 +1,4 @@
-# XOpt
+# XOpt [![CircleCI](https://circleci.com/gh/Qix-/xopt.svg?style=svg)](https://circleci.com/gh/Qix-/xopt)
 The sane answer to POpt.
 
 XOpt is a command line argument parsing library written in ANSI C. XOpt
