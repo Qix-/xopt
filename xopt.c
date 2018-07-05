@@ -56,7 +56,7 @@ struct xoptContext {
 };
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
-static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
+static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		int *argi, void *data, const char **err);
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
 		size_t *extrasCapac, const char **err);
@@ -100,7 +100,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	int extrasCount;
 	size_t extrasCapac;
 	const char **extras;
-	bool parseResult;
+	int parseResult;
 	size_t i;
 
 	*err = 0;
@@ -130,32 +130,37 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	/* iterate over passed command line arguments */
 	for (; argi < argc; argi++) {
 		/* parse, breaking if there was a failure
-			 parseResult is true if extra, false if option */
+			 parseResult is 0 if option, 1 if extra, or 2 if double-dash was encountered */
 		parseResult = _xopt_parse_arg(ctx, argc, argv, &argi, data, err);
 		if (*err) {
 			break;
 		}
 
 		/* is the argument an extra? */
-		if (parseResult) {
-			/* make sure we have enough room, or realloc if we don't -
-				 check that it succeeded */
-			_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
-			if (*err) {
-				break;
-			}
-
-			/* add extra to list */
-			extras[extrasCount++] = argv[argi];
-		} else {
+		switch (parseResult) {
+		case 0: /* option */
 			/* make sure we're super-posix'd if specified to be
 				 (check that no extras have been specified when an option is parsed,
 				 enforcing options to be specific before [extra] arguments */
 			if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && extrasCount) {
-				_xopt_set_err(err, "options cannot be specified after arguments: %s",
-						argv[argi]);
-				break;
+				_xopt_set_err(err, "options cannot be specified after arguments: %s", argv[argi]);
+				goto end;
 			}
+			break;
+		case 1: /* extra */
+			/* make sure we have enough room, or realloc if we don't -
+				 check that it succeeded */
+			_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
+			if (*err) {
+				goto end;
+			}
+
+			/* add extra to list */
+			extras[extrasCount++] = argv[argi];
+			break;
+		case 2: /* "--" was encountered */
+			/* nothing to do here - "--" was already handled for us */
+			break;
 		}
 	}
 
@@ -282,7 +287,7 @@ static void _xopt_set_err(const char **err, const char *const fmt, ...) {
 	*err = &errbuf[0];
 }
 
-static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
+static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		int *argi, void *data, const char **err) {
 	int size;
 	size_t length;
@@ -293,7 +298,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
 	/* are we in doubledash mode? */
 	if (ctx->doubledash) {
-		return true;
+		return 1;
 	}
 
 	/* get argument 'size' (long/short/extra) */
@@ -305,13 +310,13 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 
 	if (size == 1 && length == 0) {
 		/* it's just a singular dash - treat it as an extra arg */
-		return true;
+		return 1;
 	}
 
 	if (size == 2 && length == 0) {
 		/* double-dash - everything after this is an extra */
 		ctx->doubledash = 1;
-		return false;
+		return 2;
 	}
 
 	switch (size) {
@@ -445,7 +450,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		ctx->required[option_index] = false;
 	}
 
-	return isExtra;
+	return isExtra ? 1 : 0;
 }
 
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
