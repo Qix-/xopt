@@ -1,14 +1,11 @@
 .PHONY: all clean
 
-all: simple-test macro-test
+TESTS := simple-test macro-test required-test
 
-%.o: %.c
-	$(CC) -ansi -pedantic -Wall -Wextra -Werror $(CFLAGS) -I.. -c $< -o $@
+all: $(TESTS)
 
-simple-test: simple-test.o ../libxopt.a
-	$(CC) -L.. -o $@ $< -lxopt
-macro-test: macro-test.o ../libxopt.a
-	$(CC) -L.. -o $@ $< -lxopt
+%: %.c ../libxopt.a
+	$(CC) -ansi -pedantic-errors -Wall -Wextra -Werror $(CFLAGS) -I.. -L.. -o $@ $< -lxopt
 
 clean:
-	-rm -f $(OBJECTS) simple-test macro-test *.o
+	rm -f $(TESTS) *.o
