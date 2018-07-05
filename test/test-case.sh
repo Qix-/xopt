@@ -7,8 +7,9 @@
 set -uo pipefail
 exec >&2
 
-name="$1"
-shift 1
+casebin="$1"
+caseout="$2"
+shift 2
 
 function die {
 	echo -e "error: $*"
@@ -17,11 +18,12 @@ function die {
 
 cd "$(dirname "$0")"
 
-casebin="$(pwd)/../build/xopt-test-${name}"
-caseout="$(pwd)/${name}.out"
+if [ -z "$casebin" ]; then
+	die 'no test case executable specified'
+fi
 
-if [ -z "$name" ]; then
-	die 'no test case specified'
+if [ -z "$caseout" ]; then
+	die 'no test case output (some-case.out) specified'
 fi
 
 if [ ! -x "$casebin" ]; then
