@@ -38,7 +38,7 @@ if [ $r -ne 0 ]; then
 	die "$output"
 fi
 
-diff="$(diff --suppress-common-lines -d -t "$caseout" - <<< "$output" 2>&1)"
+diff="$(diff -U0 -d -t "$caseout" - <<< "$output" 2>&1)"
 if [ ! -z "$diff" ]; then
 	die "xopt test case failed: '$name'\n$diff"
 fi

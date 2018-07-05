@@ -1,6 +1,6 @@
 FROM alpine:3.7 AS base
 WORKDIR /src
-RUN apk --update add alpine-sdk cmake
+RUN apk --update add alpine-sdk cmake bash
 COPY . ./
 WORKDIR /src/build
 
