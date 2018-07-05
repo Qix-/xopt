@@ -8,6 +8,7 @@ typedef struct {
 	int someInt;
 	float someFloat;
 	double someDouble;
+	int someRequired;
 	bool help;
 } SimpleConfig;
 
@@ -40,6 +41,15 @@ xoptOption options[] = {
 		"Some double value."
 	},
 	{
+		"some-required",
+		'r',
+		offsetof(SimpleConfig, someRequired),
+		0,
+		XOPT_TYPE_INT | XOPT_REQUIRED,
+		"n",
+		"Some value"
+	},
+	{
 		"help",
 		'?',
 		offsetof(SimpleConfig, help),
@@ -61,8 +71,8 @@ int main(int argc, const char **argv) {
 
 	/* setup defaults */
 	config.someInt = 0;
-	config.someDouble = 0.0f;
 	config.someDouble = 0.0;
+	config.someRequired = 0;
 	config.help = 0;
 
 	XOPT_SIMPLE_PARSE(
@@ -89,6 +99,7 @@ int main(int argc, const char **argv) {
 	P(someInt, d);
 	P(someFloat, f);
 	P(someDouble, f);
+	P(someRequired, d);
 	P(help, d);
 
 	fprintf(stderr, "\nextra count: %d\n", extraCount);

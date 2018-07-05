@@ -8,7 +8,6 @@ typedef struct {
 	int someInt;
 	float someFloat;
 	double someDouble;
-	int someRequired;
 	bool help;
 } SimpleConfig;
 
@@ -41,15 +40,6 @@ xoptOption options[] = {
 		"Some double value."
 	},
 	{
-		"some-required",
-		'r',
-		offsetof(SimpleConfig, someRequired),
-		0,
-		XOPT_TYPE_INT | XOPT_REQUIRED,
-		"n",
-		"Some value"
-	},
-	{
 		"help",
 		'?',
 		offsetof(SimpleConfig, help),
@@ -62,34 +52,48 @@ xoptOption options[] = {
 };
 
 int main(int argc, const char **argv) {
-	int exit_code = 1;
-	const char *err = NULL;
+	int result;
+	const char *err;
+	xoptContext *ctx;
 	SimpleConfig config;
-	const char **extras = NULL;
-	const char **extrasPtr = NULL;
-	int extraCount = 0;
+	const char **extras = 0;
+	const char **extrasPtr = 0;
+	int extraCount;
+
+	result = 0;
+	err = 0;
 
 	/* setup defaults */
 	config.someInt = 0;
-	config.someDouble = 0.0f;
 	config.someDouble = 0.0;
-	config.someRequired = 0;
 	config.help = 0;
 
-	XOPT_SIMPLE_PARSE(
-		argv[0],
-		&options[0], &config,
-		argc, argv,
-		&extraCount, &extras,
-		&err,
-		stderr,
-		"macro-test [opts...] [--] [extras...]",
-		"Tests the simple parser macro",
-		"[end of arguments]",
-		15);
-
+	/* create context */
+	ctx = xopt_context("xopt-test", options,
+			XOPT_CTX_POSIXMEHARDER | XOPT_CTX_STRICT, &err);
 	if (err) {
 		fprintf(stderr, "Error: %s\n", err);
+		result = 1;
+		goto exit;
+	}
+
+	/* parse */
+	extraCount = xopt_parse(ctx, argc, argv, &config, &extras, &err);
+	if (err) {
+		fprintf(stderr, "Error: %s\n", err);
+		result = 2;
+		goto exit;
+	}
+
+	/* help? */
+	if (config.help) {
+		xoptAutohelpOptions opts;
+		opts.usage = "usage: simple-test [options] [extras...]";
+		opts.prefix = "A simple demonstration of the XOpt options parser library.";
+		opts.suffix = "End argument list.";
+		opts.spacer = 10;
+
+		xopt_autohelp(ctx, stderr, &opts, &err);
 		goto exit;
 	}
 
@@ -100,7 +104,6 @@ int main(int argc, const char **argv) {
 	P(someInt, d);
 	P(someFloat, f);
 	P(someDouble, f);
-	P(someRequired, d);
 	P(help, d);
 
 	fprintf(stderr, "\nextra count: %d\n", extraCount);
@@ -111,11 +114,8 @@ int main(int argc, const char **argv) {
 
 #undef P
 
-	exit_code = 0;
 exit:
-	free(extras); /* DO NOT free individual strings */
-	return exit_code;
-xopt_help:
-	exit_code = 2;
-	goto exit;
+	if (extras) free(extras); /* DO NOT free individual strings */
+	if (ctx) free(ctx);       /*   they point to argv strings   */
+	return result;
 }
