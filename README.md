@@ -1,7 +1,7 @@
 # XOpt
 The sane answer to POpt.
 
-XOpt is a command line argument parsing library written in ANSI C (C89). XOpt
+XOpt is a command line argument parsing library written in ANSI C. XOpt
 accepts arguments in GNU format and focuses on clean definition, taking stress
 off the implementation.
 
