@@ -55,8 +55,10 @@ enum xoptOptionFlag {
 	XOPT_TYPE_DOUBLE          = 0x10,         /* double type */
 	XOPT_TYPE_BOOL            = 0x20,         /* boolean (int) type */
 
-	XOPT_OPTIONAL             = 0x40          /* whether the argument value is
+	XOPT_PARAM_OPTIONAL       = 0x40,         /* whether the argument value is
 	                                             optional */
+	XOPT_REQUIRED             = 0x80          /* indicates the flag must be
+	                                             present on the command line */
 };
 
 enum xoptContextFlag {
@@ -194,15 +196,10 @@ xopt_autohelp(
  */
 #define XOPT_SIMPLE_PARSE(name, options, config_ptr, argc, argv, extrac_ptr, extrav_ptr, err_ptr, autohelp_file, autohelp_usage, autohelp_prefix, autohelp_suffix, autohelp_spacer) do { \
 		xoptContext *_xopt_ctx; \
-		\
 		*(err_ptr) = NULL; \
-		\
 		_xopt_ctx = xopt_context((name), (options), XOPT_CTX_POSIXMEHARDER | XOPT_CTX_STRICT, (err_ptr)); \
 		if (*(err_ptr)) break; \
-		\
 		*extrac_ptr = xopt_parse(_xopt_ctx, (argc), (argv), (config_ptr), (extrav_ptr), (err_ptr)); \
-		if (*(err_ptr)) goto __xopt_end_free_ctx; \
-		\
 		if ((config_ptr)->help) { \
 			xoptAutohelpOptions __xopt_autohelp_opts; \
 			__xopt_autohelp_opts.usage = (autohelp_usage); \
@@ -213,7 +210,7 @@ xopt_autohelp(
 			if (*(err_ptr)) goto __xopt_end_free_extrav; \
 			goto xopt_help; \
 		} \
-	\
+		if (*(err_ptr)) goto __xopt_end_free_ctx; \
 	__xopt_end_free_ctx: \
 		free(_xopt_ctx); \
 		break; \

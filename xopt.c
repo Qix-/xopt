@@ -51,6 +51,8 @@ struct xoptContext {
 	long flags;
 	const char *name;
 	bool doubledash;
+	size_t options_count;
+	bool *required;
 };
 
 static void _xopt_set_err(const char **err, const char *const fmt, ...);
@@ -59,8 +61,8 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 static void _xopt_assert_increment(const char ***extras, int extrasCount,
 		size_t *extrasCapac, const char **err);
 static int _xopt_get_size(const char *arg);
-static int _xopt_get_arg(const char *arg, size_t len, const xoptOption *options,
-		int size, const xoptOption **option);
+static int _xopt_get_arg(const xoptContext *ctx, const char *arg, size_t len,
+		int size, const xoptOption **option, size_t *option_index);
 static void _xopt_set(void *data, const xoptOption *option, const char *val,
 		bool longArg, const char **err);
 static void _xopt_default_callback(const char *value, void *data,
@@ -77,10 +79,16 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 		ctx = 0;
 		_xopt_set_err(err, "could not allocate context");
 	} else {
+		const xoptOption *cur;
+
 		ctx->options = options;
 		ctx->flags = flags;
 		ctx->name = name;
 		ctx->doubledash = false;
+
+		ctx->options_count = 0;
+		cur = options;
+		for (; cur->longArg || cur->shortArg; cur++) ++ctx->options_count;
 	}
 
 	return ctx;
@@ -93,6 +101,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	size_t extrasCapac;
 	const char **extras;
 	bool parseResult;
+	size_t i;
 
 	*err = 0;
 	argi = 0;
@@ -110,6 +119,12 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 		 instructed to check argv[0] */
 	if (!(ctx->flags & XOPT_CTX_KEEPFIRST)) {
 		++argi;
+	}
+
+	/* set up required parameters list */
+	ctx->required = malloc(sizeof(*ctx->required) * ctx->options_count);
+	for (i = 0; i < ctx->options_count; i++) {
+		ctx->required[i] = (ctx->options[i].options & XOPT_REQUIRED) > 0;
 	}
 
 	/* iterate over passed command line arguments */
@@ -145,6 +160,22 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	}
 
 end:
+	if (!*err) {
+		for (i = 0; i < ctx->options_count; i++) {
+			if (ctx->required[i]) {
+				const xoptOption *opt = &ctx->options[i];
+				if (opt->longArg) {
+					_xopt_set_err(err, "missing required option: --%s", opt->longArg);
+				} else {
+					_xopt_set_err(err, "missing required option: -%c", opt->shortArg);
+				}
+				break;
+			}
+		}
+	}
+
+	free(ctx->required);
+
 	if (!*err) {
 		/* append null terminator to extras */
 		_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
@@ -230,7 +261,11 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *op
 				fprintf(stream, " ");
 			}
 
-			fprintf(stream, "%s\n", o->descrip);
+			if (o->options & XOPT_REQUIRED) {
+				fprintf(stream, "(Required) %s\n", o->descrip);
+			} else {
+				fprintf(stream, "%s\n", o->descrip);
+			}
 		}
 	}
 
@@ -252,6 +287,8 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	int size;
 	size_t length;
 	bool isExtra = false;
+	const xoptOption *option = NULL;
+	size_t option_index = 0;
 	const char* arg = argv[*argi];
 
 	/* are we in doubledash mode? */
@@ -278,7 +315,6 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	}
 
 	switch (size) {
-		const xoptOption *option;
 		int argRequirement;
 		char *valStart;
 	case 1: /* short */
@@ -287,7 +323,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 			_xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
 		} else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
 			/* get argument or error if not found and strict mode enabled. */
-			argRequirement = _xopt_get_arg(arg, 1, ctx->options, size, &option);
+			argRequirement = _xopt_get_arg(ctx, arg, 1, size, &option, &option_index);
 			if (!option) {
 				if (ctx->flags & XOPT_CTX_STRICT) {
 					_xopt_set_err(err, "invalid option: -%c", arg[0]);
@@ -310,7 +346,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 			/* parse all */
 			while (length--) {
 				/* get argument or error if not found and strict mode enabled. */
-				argRequirement = _xopt_get_arg(arg++, 1, ctx->options, size, &option);
+				argRequirement = _xopt_get_arg(ctx, arg++, 1, size, &option, &option_index);
 				if (!option) {
 					if (ctx->flags & XOPT_CTX_STRICT) {
 						_xopt_set_err(err, "invalid option: -%c", arg[-1]);
@@ -374,7 +410,7 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		}
 
 		/* get the option */
-		argRequirement = _xopt_get_arg(arg, length, ctx->options, size, &option);
+		argRequirement = _xopt_get_arg(ctx, arg, length, size, &option, &option_index);
 		if (!option) {
 			_xopt_set_err(err, "invalid option: --%.*s", length, arg);
 		} else {
@@ -404,6 +440,11 @@ static bool _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		break;
 	}
 
+	if (option) {
+		/* indicate that we've seen this option and thus is no longer required */
+		ctx->required[option_index] = false;
+	}
+
 	return isExtra;
 }
 
@@ -430,18 +471,20 @@ static int _xopt_get_size(const char *arg) {
 	return size;
 }
 
-static int _xopt_get_arg(const char *arg, size_t len, const xoptOption *options,
-		int size, const xoptOption **option) {
+static int _xopt_get_arg(const xoptContext *ctx, const char *arg, size_t len,
+		int size, const xoptOption **option, size_t *option_index) {
+	size_t i;
+
 	*option = 0;
 
 	/* find the argument */
-	for (; options[0].longArg || options[0].shortArg; options++) {
-		if (size == 1 && options[0].shortArg == arg[0]) {
-			*option = options;
-			break;
-		} else if (strlen(options[0].longArg) == len &&
-				!strncmp(options[0].longArg, arg, len)) {
-			*option = options;
+	for (i = 0; i < ctx->options_count; i++) {
+		const xoptOption *opt = &ctx->options[i];
+
+		if ((size == 1 && opt->shortArg == arg[0])
+		    || (strlen(opt->longArg) == len && !strncmp(opt->longArg, arg, len))) {
+			*option_index = i;
+			*option = opt;
 			break;
 		}
 	}
@@ -449,7 +492,7 @@ static int _xopt_get_arg(const char *arg, size_t len, const xoptOption *options,
 	/* determine the optionality of a value */
 	if (!*option || (*option)->options & XOPT_TYPE_BOOL) {
 		return 0;
-	} else if ((*option)->options & XOPT_OPTIONAL) {
+	} else if ((*option)->options & XOPT_PARAM_OPTIONAL) {
 		return 1;
 	} else {
 		return 2;
