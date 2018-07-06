@@ -1,0 +1,11 @@
+args: «-i» «10» «-d» «14.5» «foo» «bar» «--» «--some-other=20»
+
+someInt:	10
+someFloat:	0.000000
+someDouble:	14.500000
+help:	0
+
+extra count: 3
+- foo
+- bar
+- --some-other=20

@@ -487,7 +487,7 @@ static int _xopt_get_arg(const xoptContext *ctx, const char *arg, size_t len,
 		const xoptOption *opt = &ctx->options[i];
 
 		if ((size == 1 && opt->shortArg == arg[0])
-		    || (strlen(opt->longArg) == len && !strncmp(opt->longArg, arg, len))) {
+		    || (opt->longArg && strlen(opt->longArg) == len && !strncmp(opt->longArg, arg, len))) {
 			*option_index = i;
 			*option = opt;
 			break;
