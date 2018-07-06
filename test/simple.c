@@ -95,7 +95,7 @@ int main(int argc, const char **argv) {
 	/* help? */
 	if (config.help) {
 		xoptAutohelpOptions opts;
-		opts.usage = "usage: simple-test [options] [extras...]";
+		opts.usage = "[options] [extras...]";
 		opts.prefix = "A simple demonstration of the XOpt options parser library.";
 		opts.suffix = "End argument list.";
 		opts.spacer = 10;

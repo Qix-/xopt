@@ -78,7 +78,7 @@ int main(int argc, const char **argv) {
 		&extraCount, &extras,
 		&err,
 		stderr,
-		"macro-test [opts...] [--] [extras...]",
+		"[opts...] [--] [extras...]",
 		"Tests the simple parser macro",
 		"[end of arguments]",
 		15);
