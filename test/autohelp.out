@@ -1,0 +1,12 @@
+args: «--help» «--» «--is-not-passed» «ignoreme»
+
+usage: autohelp-test-case [opts...] [--] [extras...]
+
+Tests the simple parser macro
+
+-i, --some-int=n               Some integer value. Can set to whatever number you like.
+-f                             Some float value.
+--some-double=n                Some double value.
+-?, --help                     Shows this help message
+
+[end of arguments]

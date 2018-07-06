@@ -209,7 +209,7 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *op
 	*err = 0;
 
 	if (options && options->usage) {
-		fprintf(stream, "%s%s\n", nl, options->usage);
+		fprintf(stream, "%susage: %s %s\n", nl, ctx->name, options->usage);
 		nl = "\n";
 	}
 
