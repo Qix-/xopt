@@ -45,5 +45,5 @@ fi
 
 diff="$(diff -U0 -d -t "$caseout" - <<< "$output" 2>&1)"
 if [ ! -z "$diff" ]; then
-	die "xopt test case didn't match expected output: '$name'\n$diff"
+	die "xopt test case didn't match expected output: '$caseout'\n$diff"
 fi
