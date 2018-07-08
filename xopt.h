@@ -194,10 +194,10 @@ xopt_autohelp(
  *  `FILE*` reference (e.g. `stdout` or `stderr`) which receives the rendered autohelp text). Consult the
  *  `xoptAutohelpOptions` struct above for documentation as to valid values for each of these properties.
  */
-#define XOPT_SIMPLE_PARSE(name, options, config_ptr, argc, argv, extrac_ptr, extrav_ptr, err_ptr, autohelp_file, autohelp_usage, autohelp_prefix, autohelp_suffix, autohelp_spacer) do { \
+#define XOPT_SIMPLE_PARSE(name, flags, options, config_ptr, argc, argv, extrac_ptr, extrav_ptr, err_ptr, autohelp_file, autohelp_usage, autohelp_prefix, autohelp_suffix, autohelp_spacer) do { \
 		xoptContext *_xopt_ctx; \
 		*(err_ptr) = NULL; \
-		_xopt_ctx = xopt_context((name), (options), XOPT_CTX_POSIXMEHARDER | XOPT_CTX_STRICT, (err_ptr)); \
+		_xopt_ctx = xopt_context((name), (options), ((flags) ^ XOPT_CTX_POSIXMEHARDER ^ XOPT_CTX_STRICT), (err_ptr)); \
 		if (*(err_ptr)) break; \
 		*extrac_ptr = xopt_parse(_xopt_ctx, (argc), (argv), (config_ptr), (extrav_ptr), (err_ptr)); \
 		if ((config_ptr)->help) { \

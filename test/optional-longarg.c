@@ -73,6 +73,7 @@ int main(int argc, const char **argv) {
 
 	XOPT_SIMPLE_PARSE(
 		argv[0],
+		0,
 		&options[0], &config,
 		argc, argv,
 		&extraCount, &extras,
