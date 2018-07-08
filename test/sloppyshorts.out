@@ -1,11 +1,13 @@
-args: «--some-int=10» «--some-double=14.5» «foo» «bar» «--» «--some-other=20»
+args: «-i10» «-d» «14.5» «-ssome string» «foo» «bar» «--» «--is-not-passed» «ignoreme»
 
 someInt:	10
 someFloat:	0.000000
 someDouble:	14.500000
+someString:	some string
 help:	0
 
-extra count: 3
+extra count: 4
 - foo
 - bar
-- --some-other=20
+- --is-not-passed
+- ignoreme
