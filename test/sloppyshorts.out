@@ -4,6 +4,7 @@ someInt:	10
 someFloat:	0.000000
 someDouble:	14.500000
 someString:	some string
+multiCount:	5
 help:	0
 
 extra count: 4

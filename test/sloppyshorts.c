@@ -9,8 +9,17 @@ typedef struct {
 	float someFloat;
 	double someDouble;
 	const char *someString;
+	int multiCount;
 	bool help;
 } SimpleConfig;
+
+static void on_verbose(const char *v, void *data, const struct xoptOption *option, bool longArg, const char **err) {
+	(void) v;
+	(void) longArg;
+	(void) err;
+	int *count = (int *)(((char *) data) + option->offset);
+	++*count;
+}
 
 xoptOption options[] = {
 	{
@@ -50,6 +59,15 @@ xoptOption options[] = {
 		"Some string value."
 	},
 	{
+		0,
+		'm',
+		offsetof(SimpleConfig, multiCount),
+		&on_verbose,
+		XOPT_TYPE_BOOL,
+		0,
+		"Specify multiple times to increase count"
+	},
+	{
 		"help",
 		'?',
 		offsetof(SimpleConfig, help),
@@ -79,6 +97,9 @@ int main(int argc, const char **argv) {
 	/* setup defaults */
 	config.someInt = 0;
 	config.someDouble = 0.0;
+	config.someFloat = 0.0f;
+	config.someString = 0;
+	config.multiCount = 0;
 	config.help = 0;
 
 	XOPT_SIMPLE_PARSE(
@@ -107,6 +128,7 @@ int main(int argc, const char **argv) {
 	P(someFloat, f);
 	P(someDouble, f);
 	P(someString, s);
+	P(multiCount, d);
 	P(help, d);
 
 	fprintf(stderr, "\nextra count: %d\n", extraCount);
