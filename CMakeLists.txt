@@ -3,6 +3,12 @@ project (xopt)
 
 add_library (xopt STATIC "${CMAKE_CURRENT_SOURCE_DIR}/xopt.c")
 
+if (APPLE OR UNIX)
+	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -pedantic -std=c11 -D_XOPEN_SOURCE=600 -fdiagnostics-color=always -fvisibility=hidden")
+	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g3 -Og")
+	set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Ofast")
+endif ()
+
 function (_xopt_test name)
 	add_executable ("xopt-test-${name}" "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.c")
 	target_link_libraries ("xopt-test-${name}" xopt)

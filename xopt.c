@@ -25,8 +25,8 @@
 #ifndef XOPT_NOSTANDARD
 #	define HAVE_STDARG_H 1
 #	define HAVE_STDLIB_H 1
-#	define HAVE_VASPRINTF_H 1
 #	define HAVE_ASPRINTF_H 1
+#	define vasprintf rpl_vasprintf
 #	ifndef _GNU_SOURCE
 #		define _GNU_SOURCE
 #	endif
