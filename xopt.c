@@ -78,21 +78,9 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 
 	/* malloc context and check */
 	ctx = malloc(sizeof(xoptContext));
-
-	jmp_buf jmp;
-	ctx->jmp = &jmp;
-	if (setjmp(jmp)) {
-		if (ctx != NULL) {
-			free(ctx);
-			ctx = NULL;
-		}
-
-		return NULL;
-	}
-
 	if (!ctx) {
 		ctx = 0;
-		_xopt_set_err(ctx, err, "could not allocate context");
+		_xopt_set_err(NULL, err, "could not allocate context");
 	} else {
 		const xoptOption *cur;
 
@@ -111,20 +99,18 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 	return ctx;
 }
 
-int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
-		const char ***inextras, const char **err) {
+static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void *data,
+		const char ***inextras, const char **err, int *extrasCount, size_t *extrasCapac,
+		const char ***extras) {
 	int argi;
-	int extrasCount;
-	size_t extrasCapac;
-	const char **extras;
 	int parseResult;
 	size_t i;
 
 	*err = 0;
 	argi = 0;
-	extrasCount = 0;
-	extrasCapac = EXTRAS_INIT;
-	extras = malloc(sizeof(*extras) * EXTRAS_INIT);
+	*extrasCount = 0;
+	*extrasCapac = EXTRAS_INIT;
+	*extras = malloc(sizeof(**extras) * EXTRAS_INIT);
 
 	jmp_buf jmp;
 	ctx->jmp = &jmp;
@@ -133,7 +119,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	}
 
 	/* check if extras malloc'd okay */
-	if (!extras) {
+	if (!*extras) {
 		_xopt_set_err(ctx, err, "could not allocate extras array");
 	}
 
@@ -161,7 +147,7 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 			/* make sure we're super-posix'd if specified to be
 				 (check that no extras have been specified when an option is parsed,
 				 enforcing options to be specific before [extra] arguments */
-			if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && extrasCount) {
+			if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && *extrasCount) {
 				_xopt_set_err(ctx, err, "options cannot be specified after arguments: %s", argv[argi]);
 				goto end;
 			}
@@ -169,10 +155,10 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 		case 1: /* extra */
 			/* make sure we have enough room, or realloc if we don't -
 				 check that it succeeded */
-			_xopt_assert_increment(ctx, &extras, extrasCount, &extrasCapac, err);
+			_xopt_assert_increment(ctx, extras, *extrasCount, extrasCapac, err);
 
 			/* add extra to list */
-			extras[extrasCount++] = argv[argi];
+			(*extras)[(*extrasCount)++] = argv[argi];
 			break;
 		case 2: /* "--" was encountered */
 			/* nothing to do here - "--" was already handled for us */
@@ -199,20 +185,29 @@ end:
 
 	if (!*err) {
 		/* append null terminator to extras */
-		_xopt_assert_increment(ctx, &extras, extrasCount, &extrasCapac, err);
+		_xopt_assert_increment(ctx, extras, *extrasCount, extrasCapac, err);
 		if (!*err) {
-			extras[extrasCount] = 0;
+			(*extras)[*extrasCount] = 0;
 		}
 	}
 
 	if (*err) {
-		free(extras);
+		free(*extras);
 		*inextras = 0;
 		return 0;
 	}
 
-	*inextras = extras;
-	return extrasCount;
+	*inextras = *extras;
+	return *extrasCount;
+}
+
+int xopt_parse(xoptContext *ctx, int argc, const char **argv, void *data,
+		const char ***inextras, const char **err) {
+	/* avoid longjmp clobbering */
+	int extrasCount;
+	size_t extrasCapac;
+	const char **extras;
+	return _xopt_parse_impl(ctx, argc, argv, data, inextras, err, &extrasCount, &extrasCapac, &extras);
 }
 
 void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *options,
@@ -224,11 +219,10 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *op
 
 	*err = 0;
 
-	jmp_buf jmp;
-	ctx->jmp = &jmp;
-	if (setjmp(jmp) == 1) {
-		return;
-	}
+	/* make sure that if we ever write a call to _set_err() in the future here,
+	   that we won't accidentally cause segfaults - we have an assertion in place
+	   for ctx->jmp != NULL, so we make sure we'd trigger that assertion */
+	ctx->jmp = NULL;
 
 	if (options && options->usage) {
 		fprintf(stream, "%susage: %s %s\n", nl, ctx->name, options->usage);
