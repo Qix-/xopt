@@ -101,13 +101,12 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 
 static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void *data,
 		const char ***inextras, const char **err, int *extrasCount, size_t *extrasCapac,
-		const char ***extras) {
-	int argi;
+		const char ***extras, int *argi) {
 	int parseResult;
 	size_t i;
 
 	*err = 0;
-	argi = 0;
+	*argi = 0;
 	*extrasCount = 0;
 	*extrasCapac = EXTRAS_INIT;
 	*extras = malloc(sizeof(**extras) * EXTRAS_INIT);
@@ -126,7 +125,7 @@ static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void 
 	/* increment argument counter if we aren't
 		 instructed to check argv[0] */
 	if (!(ctx->flags & XOPT_CTX_KEEPFIRST)) {
-		++argi;
+		++(*argi);
 	}
 
 	/* set up required parameters list */
@@ -136,10 +135,10 @@ static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void 
 	}
 
 	/* iterate over passed command line arguments */
-	for (; argi < argc; argi++) {
+	for (; *argi < argc; (*argi)++) {
 		/* parse, breaking if there was a failure
 			 parseResult is 0 if option, 1 if extra, or 2 if double-dash was encountered */
-		parseResult = _xopt_parse_arg(ctx, argc, argv, &argi, data, err);
+		parseResult = _xopt_parse_arg(ctx, argc, argv, argi, data, err);
 
 		/* is the argument an extra? */
 		switch (parseResult) {
@@ -148,7 +147,7 @@ static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void 
 				 (check that no extras have been specified when an option is parsed,
 				 enforcing options to be specific before [extra] arguments */
 			if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && *extrasCount) {
-				_xopt_set_err(ctx, err, "options cannot be specified after arguments: %s", argv[argi]);
+				_xopt_set_err(ctx, err, "options cannot be specified after arguments: %s", argv[*argi]);
 				goto end;
 			}
 			break;
@@ -158,7 +157,7 @@ static int _xopt_parse_impl(xoptContext *ctx, int argc, const char **argv, void 
 			_xopt_assert_increment(ctx, extras, *extrasCount, extrasCapac, err);
 
 			/* add extra to list */
-			(*extras)[(*extrasCount)++] = argv[argi];
+			(*extras)[(*extrasCount)++] = argv[*argi];
 			break;
 		case 2: /* "--" was encountered */
 			/* nothing to do here - "--" was already handled for us */
@@ -207,7 +206,8 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void *data,
 	int extrasCount;
 	size_t extrasCapac;
 	const char **extras;
-	return _xopt_parse_impl(ctx, argc, argv, data, inextras, err, &extrasCount, &extrasCapac, &extras);
+	int argi;
+	return _xopt_parse_impl(ctx, argc, argv, data, inextras, err, &extrasCount, &extrasCapac, &extras, &argi);
 }
 
 void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *options,
