@@ -32,6 +32,8 @@
 #	endif
 #endif
 
+#include <assert.h>
+#include <setjmp.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
@@ -53,17 +55,18 @@ struct xoptContext {
 	bool doubledash;
 	size_t options_count;
 	bool *required;
+	jmp_buf *jmp;
 };
 
-static void _xopt_set_err(const char **err, const char *const fmt, ...);
+static void _xopt_set_err(xoptContext *ctx, const char **err, const char *const fmt, ...);
 static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		int *argi, void *data, const char **err);
-static void _xopt_assert_increment(const char ***extras, int extrasCount,
+static void _xopt_assert_increment(xoptContext *ctx, const char ***extras, int extrasCount,
 		size_t *extrasCapac, const char **err);
 static int _xopt_get_size(const char *arg);
 static int _xopt_get_arg(const xoptContext *ctx, const char *arg, size_t len,
 		int size, const xoptOption **option, size_t *option_index);
-static void _xopt_set(void *data, const xoptOption *option, const char *val,
+static void _xopt_set(xoptContext *ctx, void *data, const xoptOption *option, const char *val,
 		bool longArg, const char **err);
 static void _xopt_default_callback(const char *value, void *data,
 		const xoptOption *option, bool longArg, const char **err);
@@ -75,9 +78,21 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 
 	/* malloc context and check */
 	ctx = malloc(sizeof(xoptContext));
+
+	jmp_buf jmp;
+	ctx->jmp = &jmp;
+	if (setjmp(jmp)) {
+		if (ctx != NULL) {
+			free(ctx);
+			ctx = NULL;
+		}
+
+		return NULL;
+	}
+
 	if (!ctx) {
 		ctx = 0;
-		_xopt_set_err(err, "could not allocate context");
+		_xopt_set_err(ctx, err, "could not allocate context");
 	} else {
 		const xoptOption *cur;
 
@@ -85,6 +100,8 @@ xoptContext* xopt_context(const char *name, const xoptOption *options, long flag
 		ctx->flags = flags;
 		ctx->name = name;
 		ctx->doubledash = false;
+		ctx->required = NULL;
+		ctx->jmp = NULL;
 
 		ctx->options_count = 0;
 		cur = options;
@@ -109,10 +126,15 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 	extrasCapac = EXTRAS_INIT;
 	extras = malloc(sizeof(*extras) * EXTRAS_INIT);
 
+	jmp_buf jmp;
+	ctx->jmp = &jmp;
+	if (setjmp(jmp)) {
+		goto end;
+	}
+
 	/* check if extras malloc'd okay */
 	if (!extras) {
-		_xopt_set_err(err, "could not allocate extras array");
-		goto end;
+		_xopt_set_err(ctx, err, "could not allocate extras array");
 	}
 
 	/* increment argument counter if we aren't
@@ -132,9 +154,6 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 		/* parse, breaking if there was a failure
 			 parseResult is 0 if option, 1 if extra, or 2 if double-dash was encountered */
 		parseResult = _xopt_parse_arg(ctx, argc, argv, &argi, data, err);
-		if (*err) {
-			break;
-		}
 
 		/* is the argument an extra? */
 		switch (parseResult) {
@@ -143,17 +162,14 @@ int xopt_parse(xoptContext *ctx, int argc, const char **argv, void* data,
 				 (check that no extras have been specified when an option is parsed,
 				 enforcing options to be specific before [extra] arguments */
 			if ((ctx->flags & XOPT_CTX_POSIXMEHARDER) && extrasCount) {
-				_xopt_set_err(err, "options cannot be specified after arguments: %s", argv[argi]);
+				_xopt_set_err(ctx, err, "options cannot be specified after arguments: %s", argv[argi]);
 				goto end;
 			}
 			break;
 		case 1: /* extra */
 			/* make sure we have enough room, or realloc if we don't -
 				 check that it succeeded */
-			_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
-			if (*err) {
-				goto end;
-			}
+			_xopt_assert_increment(ctx, &extras, extrasCount, &extrasCapac, err);
 
 			/* add extra to list */
 			extras[extrasCount++] = argv[argi];
@@ -170,9 +186,9 @@ end:
 			if (ctx->required[i]) {
 				const xoptOption *opt = &ctx->options[i];
 				if (opt->longArg) {
-					_xopt_set_err(err, "missing required option: --%s", opt->longArg);
+					_xopt_set_err(ctx, err, "missing required option: --%s", opt->longArg);
 				} else {
-					_xopt_set_err(err, "missing required option: -%c", opt->shortArg);
+					_xopt_set_err(ctx, err, "missing required option: -%c", opt->shortArg);
 				}
 				break;
 			}
@@ -183,7 +199,7 @@ end:
 
 	if (!*err) {
 		/* append null terminator to extras */
-		_xopt_assert_increment(&extras, extrasCount, &extrasCapac, err);
+		_xopt_assert_increment(ctx, &extras, extrasCount, &extrasCapac, err);
 		if (!*err) {
 			extras[extrasCount] = 0;
 		}
@@ -207,6 +223,12 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *op
 	size_t spacer = options ? options->spacer : 2;
 
 	*err = 0;
+
+	jmp_buf jmp;
+	ctx->jmp = &jmp;
+	if (setjmp(jmp) == 1) {
+		return;
+	}
 
 	if (options && options->usage) {
 		fprintf(stream, "%susage: %s %s\n", nl, ctx->name, options->usage);
@@ -279,12 +301,17 @@ void xopt_autohelp(xoptContext *ctx, FILE *stream, const xoptAutohelpOptions *op
 	}
 }
 
-static void _xopt_set_err(const char **err, const char *const fmt, ...) {
+static void _xopt_set_err(xoptContext *ctx, const char **err, const char *const fmt, ...) {
 	va_list list;
 	va_start(list, fmt);
 	rpl_vsnprintf(&errbuf[0], ERRBUF_SIZE, fmt, list);
 	va_end(list);
 	*err = &errbuf[0];
+
+	if (ctx != NULL) {
+		assert(ctx->jmp != NULL);
+		longjmp(*ctx->jmp, 1);
+	}
 }
 
 static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
@@ -323,80 +350,61 @@ static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		int argRequirement;
 		char *valStart;
 	case 1: /* short */
-		if (length > 1 && ctx->flags & XOPT_CTX_NOCONDENSE) {
-			/* invalid argument? */
-			_xopt_set_err(err, "short options cannot be combined: %s", argv[*argi]);
-		} else if (length > 1 && ctx->flags & XOPT_CTX_SLOPPYSHORTS) {
+		/* parse all */
+		while (length--) {
 			/* get argument or error if not found and strict mode enabled. */
-			argRequirement = _xopt_get_arg(ctx, arg, 1, size, &option, &option_index);
+			argRequirement = _xopt_get_arg(ctx, arg++, 1, size, &option, &option_index);
 			if (!option) {
 				if (ctx->flags & XOPT_CTX_STRICT) {
-					_xopt_set_err(err, "invalid option: -%c", arg[0]);
+					_xopt_set_err(ctx, err, "invalid option: -%c", arg[-1]);
 				}
 				break;
 			}
 
-			/* did they specify an arg when they shouldn't have? */
-			if (!argRequirement) {
-				_xopt_set_err(err, "option doesn't take a value: -%c", arg[0]);
-				break;
+			if (argRequirement > 0 && length > 0 && !(ctx->flags & XOPT_CTX_SLOPPYSHORTS)) {
+				_xopt_set_err(ctx, err, "short option parameters must be separated, not condensed: %s", argv[*argi]);
 			}
 
-			/* set argument and check */
-			_xopt_set(data, option, arg + 1, false, err);
-			if (*err) {
-				break;
-			}
-		} else {
-			/* parse all */
-			while (length--) {
-				/* get argument or error if not found and strict mode enabled. */
-				argRequirement = _xopt_get_arg(ctx, arg++, 1, size, &option, &option_index);
-				if (!option) {
-					if (ctx->flags & XOPT_CTX_STRICT) {
-						_xopt_set_err(err, "invalid option: -%c", arg[-1]);
-					}
-					break;
+			switch (argRequirement) {
+			case 0: /* flag; doesn't take an argument */
+				if (length > 0 && (ctx->flags & XOPT_CTX_NOCONDENSE)) {
+					_xopt_set_err(ctx, err, "short options cannot be combined: %s", argv[*argi]);
 				}
 
-				switch (argRequirement) {
-				case 0: /* flag; doesn't take an argument */
-					_xopt_set(data, option, 0, false, err);
-					break;
-				case 1: /* argument is optional */
-					/* is there another argument, and is it a non-option? */
-					if (*argi + 1 < argc && _xopt_get_size(argv[*argi + 1]) == 0) {
-						_xopt_set(data, option, argv[++*argi], false, err);
-					} else {
-						_xopt_set(data, option, 0, false, err);
-					}
-					break;
-				case 2: /* requires an argument */
-					/* is it the last in a set of condensed options? */
-					if (length == 0) {
-						/* is there another argument? */
-						if (*argi + 1 < argc) {
-							/* is the next argument actually an option?
-								 this indicates no value was passed */
-							if (_xopt_get_size(argv[*argi + 1])) {
-								_xopt_set_err(err, "missing option value: -%c",
-										option->shortArg);
-							} else {
-								_xopt_set(data, option, argv[++*argi], false, err);
-							}
-						} else {
-							_xopt_set_err(err, "missing option value: -%c",
+				_xopt_set(ctx, data, option, 0, false, err);
+				break;
+			case 1: /* argument is optional */
+				/* is there another argument, and is it a non-option? */
+				if (*argi + 1 < argc && _xopt_get_size(argv[*argi + 1]) == 0) {
+					_xopt_set(ctx, data, option, argv[++*argi], false, err);
+				} else {
+					_xopt_set(ctx, data, option, 0, false, err);
+				}
+				break;
+			case 2: /* requires an argument */
+				/* is it the last in a set of condensed options? */
+				if (length == 0) {
+					/* is there another argument? */
+					if (*argi + 1 < argc) {
+						/* is the next argument actually an option?
+							 this indicates no value was passed */
+						if (_xopt_get_size(argv[*argi + 1])) {
+							_xopt_set_err(ctx, err, "missing option value: -%c",
 									option->shortArg);
+						} else {
+							_xopt_set(ctx, data, option, argv[++*argi], false, err);
 						}
 					} else {
-						_xopt_set_err(err, "combined short option requiring value is "
-								"not last: -%c", option->shortArg);
+						_xopt_set_err(ctx, err, "missing option value: -%c",
+								option->shortArg);
 					}
-					break;
+				} else {
+					_xopt_set(ctx, data, option, arg, false, err);
+					length = 0;
 				}
+				break;
 			}
 		}
-
 		break;
 	case 2: /* long */
 		/* find first equals sign */
@@ -417,26 +425,24 @@ static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 		/* get the option */
 		argRequirement = _xopt_get_arg(ctx, arg, length, size, &option, &option_index);
 		if (!option) {
-			_xopt_set_err(err, "invalid option: --%.*s", length, arg);
+			_xopt_set_err(ctx, err, "invalid option: --%.*s", length, arg);
 		} else {
 			switch (argRequirement) {
 			case 0: /* flag; doesn't take an argument */
 				if (valStart) {
-					_xopt_set_err(err, "option doesn't take a value: --%s", arg);
+					_xopt_set_err(ctx, err, "option doesn't take a value: --%s", arg);
 				}
 
-				_xopt_set(data, option, valStart, true, err);
+				_xopt_set(ctx, data, option, valStart, true, err);
 				break;
 			case 2: /* requires an argument */
 				if (!valStart) {
-					_xopt_set_err(err, "missing option value: --%s", arg);
+					_xopt_set_err(ctx, err, "missing option value: --%s", arg);
 				}
 				break;
 			}
 
-			if (!*err) {
-				_xopt_set(data, option, valStart, true, err);
-			}
+			_xopt_set(ctx, data, option, valStart, true, err);
 		}
 
 		break;
@@ -453,7 +459,7 @@ static int _xopt_parse_arg(xoptContext *ctx, int argc, const char **argv,
 	return isExtra ? 1 : 0;
 }
 
-static void _xopt_assert_increment(const char ***extras, int extrasCount,
+static void _xopt_assert_increment(xoptContext *ctx, const char ***extras, int extrasCount,
 		size_t *extrasCapac, const char **err) {
 	/* have we hit the list size limit? */
 	if ((size_t) extrasCount == *extrasCapac) {
@@ -461,7 +467,7 @@ static void _xopt_assert_increment(const char ***extras, int extrasCount,
 		*extrasCapac += EXTRAS_INIT;
 		*extras = realloc(*extras, sizeof(**extras) * *extrasCapac);
 		if (!*extras) {
-			_xopt_set_err(err, "could not realloc arguments array");
+			_xopt_set_err(ctx, err, "could not realloc arguments array");
 		}
 	}
 }
@@ -504,13 +510,20 @@ static int _xopt_get_arg(const xoptContext *ctx, const char *arg, size_t len,
 	}
 }
 
-static void _xopt_set(void *data, const xoptOption *option, const char *val,
+static void _xopt_set(xoptContext *ctx, void *data, const xoptOption *option, const char *val,
 		bool longArg, const char **err) {
 	/* determine callback */
 	xoptCallback callback = option->callback ? option->callback : &_xopt_default_callback;
 
 	/* dispatch callback */
 	callback(val, data, option, longArg, err);
+
+	/* we check err here instead of relying upon longjmp()
+	   since we can't call _set_err() with a context */
+	if (*err) {
+		assert(ctx->jmp != NULL);
+		longjmp(*ctx->jmp, 1);
+	}
 }
 
 static void _xopt_default_callback(const char *value, void *data,
@@ -566,10 +579,10 @@ static void _xopt_default_callback(const char *value, void *data,
 	/* check that our parsing functions worked */
 	if (parsePtr && *parsePtr) {
 		if (longArg) {
-			_xopt_set_err(err, "value isn't a valid number: --%s=%s",
+			_xopt_set_err(NULL, err, "value isn't a valid number: --%s=%s",
 					(void*) option->longArg, value);
 		} else {
-			_xopt_set_err(err, "value isn't a valid number: -%c %s",
+			_xopt_set_err(NULL, err, "value isn't a valid number: -%c %s",
 					option->shortArg, value);
 		}
 	}

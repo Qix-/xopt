@@ -1,10 +1,10 @@
-args: «-i10» «-d» «14.5» «-ssome string» «foo» «bar» «--» «--is-not-passed» «ignoreme»
+args: «-i10» «-d» «14.5» «-ssome string» «-m» «-mm» «-mmm» «foo» «bar» «--» «--is-not-passed» «ignoreme»
 
 someInt:	10
 someFloat:	0.000000
 someDouble:	14.500000
 someString:	some string
-multiCount:	5
+multiCount:	6
 help:	0
 
 extra count: 4

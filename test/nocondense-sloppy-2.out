@@ -1,0 +1,3 @@
+args: «-i» «10» «-d» «14.5» «-ssome string» «-m» «-mm» «-mmm» «foo» «bar» «--» «--is-not-passed» «ignoreme»
+
+Error: short options cannot be combined: -mm

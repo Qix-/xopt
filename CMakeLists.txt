@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.4)
+cmake_minimum_required (VERSION 3.8)
 project (xopt)
 
 add_library (xopt STATIC "${CMAKE_CURRENT_SOURCE_DIR}/xopt.c")
@@ -10,11 +10,21 @@ if (APPLE OR UNIX)
 endif ()
 
 function (_xopt_test name)
-	add_executable ("xopt-test-${name}" "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.c")
-	target_link_libraries ("xopt-test-${name}" xopt)
+	if (NOT TARGET "xopt-test-${name}")
+		add_executable ("xopt-test-${name}" "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.c")
+		target_link_libraries ("xopt-test-${name}" xopt)
+	endif ()
+
+	set (testname "xopt-${name}-test")
+	set (testnum 1)
+
+	while (TEST "${testname}-${testnum}")
+		math (EXPR testnum "${testnum}+1")
+	endwhile ()
+
 	add_test (
-		NAME "xopt-${name}-test"
-		COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test/test-case.sh" $<TARGET_FILE:xopt-test-${name}> "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}.out" ${ARGN}
+		NAME "${testname}-${testnum}"
+		COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test/test-case.sh" $<TARGET_FILE:xopt-test-${name}> "${CMAKE_CURRENT_SOURCE_DIR}/test/${name}-${testnum}.out" ${ARGN}
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/test")
 endfunction ()
 
@@ -26,4 +36,8 @@ if (BUILD_TESTING)
 	_xopt_test (optional-longarg -i 10 -d 14.5 foo bar -- --some-other=20)
 	_xopt_test (autohelp --help -- --is-not-passed ignoreme)
 	_xopt_test (sloppyshorts -i10 -d 14.5 "-ssome string" -m -mm -mmm foo bar -- --is-not-passed ignoreme)
+	_xopt_test (nocondense-sloppy -i 10 -d 14.5 -s "some string" -m -mm -mmm foo bar -- --is-not-passed ignoreme)
+	_xopt_test (nocondense-sloppy -i 10 -d 14.5 "-ssome string" -m -mm -mmm foo bar -- --is-not-passed ignoreme)
+	_xopt_test (nocondense-sloppy -i 10 -d 14.5 "-ssome string" -m -m -m -m -m -m foo bar -- --is-not-passed ignoreme)
+	_xopt_test (nocondense -i 10 -d 14.5 "-ssome string" -m -mm -mmm foo bar -- --is-not-passed ignoreme)
 endif ()

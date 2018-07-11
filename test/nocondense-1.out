@@ -1,0 +1,3 @@
+args: «-i» «10» «-d» «14.5» «-ssome string» «-m» «-mm» «-mmm» «foo» «bar» «--» «--is-not-passed» «ignoreme»
+
+Error: short option parameters must be separated, not condensed: -ssome string

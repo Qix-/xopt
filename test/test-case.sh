@@ -36,11 +36,8 @@ fi
 
 output="$("$casebin" "$@" 2>&1)"
 r=$?
-if [ $r -ne 0 ]; then
-	if [ $r -eq 139 ]; then
-		r="${r}, segfault"
-	fi
-	die "xopt test case failed ($r):\n$output"
+if [ $r -eq 139 ]; then
+	die "xopt test case failed with SEGFAULT ($r)"
 fi
 
 diff="$(diff -U0 -d -t "$caseout" - <<< "$output" 2>&1)"
