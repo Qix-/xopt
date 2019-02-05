@@ -10,7 +10,7 @@ insert_final_newline = true
 [*.coffee]
 indent_style = space
 
-[{package.json,*.yml}]
+[{package.json,*.yml,meson.build}]
 indent_style = space
 indent_size = 2
 
