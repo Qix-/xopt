@@ -1,17 +1,18 @@
 FROM alpine:3.7 AS base
 WORKDIR /src
-RUN apk --update add alpine-sdk cmake bash
+RUN apk --update add alpine-sdk python3 bash ninja
+RUN pip3 install --upgrade pip
+RUN pip3 install meson
 COPY . ./
-WORKDIR /src/build
 
 # Debug
 FROM base
-RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=On
-RUN cmake --build .
-RUN ctest -VV
+RUN meson --buildtype=debug build
+WORKDIR /src/build
+RUN meson test
 
 # Release
 FROM base
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=On
-RUN cmake --build .
-RUN ctest -VV
+RUN meson --buildtype=release build
+WORKDIR /src/build
+RUN meson test
